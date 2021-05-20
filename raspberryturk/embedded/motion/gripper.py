@@ -2,8 +2,8 @@ import RPi.GPIO as GPIO
 from time import sleep
 import chess
 
-electromagnet_pin = 40
-servo_pin = 38
+electromagnet_pin = 40  #选择控制电磁铁gpio引脚编号
+servo_pin = 38   
 
 PIECE_HEIGHTS = {  # changed according to the chess height (mm)
     chess.KING: 66,
@@ -21,8 +21,8 @@ RESTING_HEIGHT = MAX_PIECE_HEIGHT + 15   # set rest size considering the length 
 class Gripper(object):
     def __init__(self):
         self.previous_z = None
-        GPIO.setmode(GPIO.BOARD)
-        GPIO.setup(servo_pin, GPIO.OUT)
+        GPIO.setmode(GPIO.BOARD)  #设置引脚编号规则
+        GPIO.setup(servo_pin, GPIO.OUT)  #设置为输出
         GPIO.setup(electromagnet_pin, GPIO.OUT)
 
     def calibrate(self):    # reset to the rest height
@@ -31,8 +31,8 @@ class Gripper(object):
     def move(self, z):  # Gripper move along Z axis，We do not have this DOF 末端舵机（我们pro没有）
         z = max(0.0, min(z, 100.0))
         dc = (z * 0.067) + 4.0
-        p = GPIO.PWM(servo_pin, 50.0)
-        p.start(dc)
+        p = GPIO.PWM(servo_pin, 50.0)   #将38号引脚初始化为PWM实例，频率为50Hz
+        p.start(dc)  #开始脉宽调制，用于控制舵机速度
         if self.previous_z is None:
             t = 10.0
         else:
