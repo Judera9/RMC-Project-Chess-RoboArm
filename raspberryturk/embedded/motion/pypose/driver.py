@@ -34,7 +34,7 @@ import logging
 class Driver:
     """ Class to open a serial port and control AX-12 servos
     through an arbotiX board or USB Dynamixel. """
-
+    # port Windows: 'COM1' Linux: '/dev/ttyUSB0' Mac: '/dev/tty.usbserial-*'
     def __init__(self, port="/dev/ttyUSB0", baud=38400, interpolation=False, direct=False, verbose=False):
         """ This may throw errors up the line -- that's a good thing. """
         self.ser = serial.Serial()
@@ -153,8 +153,9 @@ class Driver:
         self.ser.write(chr(checksum))
         # no return info...
 
+
 def main():
-    driver= Driver(port='COM3')
+    driver = Driver(port='COM3')
     driver.setReg(12, P_GOAL_POSITION_L, [512 % 256, 512 >> 8])
 
 
