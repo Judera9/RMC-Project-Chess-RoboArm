@@ -15,7 +15,7 @@ SERVO_4 = 2
 SERVO_5 = 17  # combined with SERVO_4
 SERVO_6 = 11
 # 这里可以打包两组电机
-SERVOS = [SERVO_6, SERVO_4, SERVO_2, SERVO_1]
+SERVOS = [SERVO_1, SERVO_2, SERVO_4, SERVO_6 ]
 MIN_SPEED = 20
 MAX_SPEED = 80
 RESTING_POSITION = (512, 512)
@@ -61,6 +61,23 @@ class Arm(object):
         self.move_new((512, 512, 512, 512))
 
     def move_new(self, goal_position):
+        # start_position = self.current_position()
+        self.set_speed([MIN_SPEED, MIN_SPEED])
+        for i in SERVOS:  # 遍历电机运动，打包两对电机   QAQ注意舵盘反向问题，改[i % 2]这个
+            if i == SERVO_1:
+                self.driver.setReg(i, P_GOAL_POSITION_L, goal_position[0])
+            elif i == SERVO_2:
+                self.driver.syncWrite(P_GOAL_POSITION_L, [SERVO_4, goal_position[1]], [SERVO_5, goal_position[1]])
+            elif i == SERVO_4:
+                self.driver.syncWrite(P_GOAL_POSITION_L, [SERVO_4, goal_position[2]], [SERVO_5, goal_position[2]])
+            elif i == SERVO_6:
+                self.driver.setReg(i, P_GOAL_POSITION_L, goal_position[3])
+            '''while self._is_moving():  # 控制运动速度变化
+                position = self.current_position()
+                speed = [_adjusted_speed(start_position[i % 2], goal_position[i % 2], position[i % 2]) for i in SERVOS]
+                self.set_speed(speed)'''
+
+    def move_new1(self, goal_position):
         # start_position = self.current_position()
         self.set_speed([MIN_SPEED, MIN_SPEED])
         for i in SERVOS:  # 遍历电机运动，打包两对电机   QAQ注意舵盘反向问题，改[i % 2]这个
