@@ -104,14 +104,10 @@ LEN_MX_PRESENT_POSITION = 2
 # Protocol version
 PROTOCOL_VERSION = 1.0
 
-# Default setting
-BAUDRATE_NEW = 1000000
-DEVICENAME_NEW = 'COM3'       # ex) Windows: "COM1"   Linux: "/dev/ttyUSB0" Mac: "/dev/tty.usbserial-*"
-
 TORQUE_ENABLE = 1                 # Value for enabling the torque
 TORQUE_DISABLE = 0                 # Value for disabling the torque
-DXL_MINIMUM_POSITION_VALUE = 0           # Dynamixel will rotate between this value
-DXL_MAXIMUM_POSITION_VALUE = 1023
 DXL_MOVING_STATUS_THRESHOLD = 20           # Dynamixel moving status threshold
 WHEEL_MODE = 0
 JOINT_MODE = 1023
+
+LOW_SPEED = 100

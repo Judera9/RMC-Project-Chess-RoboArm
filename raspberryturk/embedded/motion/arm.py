@@ -6,19 +6,20 @@ from scipy.misc import derivative
 from scipy.interpolate import interp1d
 from raspberryturk.embedded.motion.arm_movement_engine import ArmMovementEngine
 from pypose.ax12 import *
-from pypose.driver import Driver
+from pypose.drivers import Drivers
 
 SERVO_1 = 16
-SERVO_2 = 10
+SERVO_2 = 10  # left
 SERVO_3 = 15  # combined with SERVO_2
-SERVO_4 = 2
+SERVO_4 = 2   # right
 SERVO_5 = 17  # combined with SERVO_4
 SERVO_6 = 11
-# 这里可以打包两组电机
 SERVOS = [SERVO_1, SERVO_2, SERVO_4, SERVO_6 ]
+SERVOS_TOTAL = [SERVO_1, SERVO_2, SERVO_3, SERVO_4, SERVO_5, SERVO_6 ]
 MIN_SPEED = 20
 MAX_SPEED = 80
-RESTING_POSITION = (512, 512)
+RESTING_POSITION = (512, 512, 512,512)
+
 
 # 输入一个list，返回list的第一位，和第二位二进制向左移8个0后对应的10进制的数
 def _register_bytes_to_value(register_bytes):
@@ -45,11 +46,11 @@ def _adjusted_speed(start_position, goal_position, position):
 
 class Arm(object):
     def __init__(self, port="/dev/ttyUSB0"):
-        self.driver = Driver(port=port)
+        self.driver = Drivers(port=port)
         self.movement_engine = ArmMovementEngine()
 
     def close(self):
-        self.driver.close()  # 也不知道该咋改
+        self.driver.close_port()
 
     def recenter(self):
         self.move((512, 512))
@@ -57,58 +58,40 @@ class Arm(object):
     def return_to_rest(self):  # position where dead pieces rest ?
         self.move_to_point([20, 13.5])
 
-    def return_to_rest_new(self):  # position where dead pieces rest ?
+    def return_to_rest_new(self):
         self.move_new((512, 512, 512, 512))
+
+    def driver_enable(self):
+        for i in SERVOS_TOTAL:
+            self.driver.torque_enable(i)
+
+    def driver_disable(self):
+        for i in SERVOS_TOTAL:
+            self.driver.torque_disable(i)
+
+    def set_driver_low_speed(self):
+        for i in SERVOS_TOTAL:
+            self.driver.setReg(i, P_GOAL_SPEED_L, LOW_SPEED)
+
 
     def move_new(self, goal_position):
         # start_position = self.current_position()
-        self.set_speed([MIN_SPEED, MIN_SPEED])
+        self.set_driver_low_speed()
         for i in SERVOS:  # 遍历电机运动，打包两对电机   QAQ注意舵盘反向问题，改[i % 2]这个
             if i == SERVO_1:
-                self.driver.setReg(i, P_GOAL_POSITION_L, goal_position[0])
+                self.driver.set_goal_position(i, goal_position[0])
             elif i == SERVO_2:
-                self.driver.syncWrite(P_GOAL_POSITION_L, [SERVO_4, goal_position[1]], [SERVO_5, goal_position[1]])
+                self.driver.syncwrite_goal_position([SERVO_2, goal_position[1]], [SERVO_3, 1023-goal_position[1]])
             elif i == SERVO_4:
-                self.driver.syncWrite(P_GOAL_POSITION_L, [SERVO_4, goal_position[2]], [SERVO_5, goal_position[2]])
+                self.driver.syncwrite_goal_position([SERVO_4, goal_position[2]], [SERVO_5, 1023-goal_position[2]])
             elif i == SERVO_6:
-                self.driver.setReg(i, P_GOAL_POSITION_L, goal_position[3])
-            '''while self._is_moving():  # 控制运动速度变化
-                position = self.current_position()
-                speed = [_adjusted_speed(start_position[i % 2], goal_position[i % 2], position[i % 2]) for i in SERVOS]
-                self.set_speed(speed)'''
+                self.driver.set_goal_position(i, goal_position[3])
 
-    def move_new1(self, goal_position):
-        # start_position = self.current_position()
-        self.set_speed([MIN_SPEED, MIN_SPEED])
-        for i in SERVOS:  # 遍历电机运动，打包两对电机   QAQ注意舵盘反向问题，改[i % 2]这个
-            if i == SERVO_2:
-                self.driver.syncWrite(P_GOAL_POSITION_L, [[SERVO_2, goal_position[1] % 256, goal_position[1] >> 8],
-                                      [SERVO_3, goal_position[1] % 256, goal_position[1] >> 8]])
-            elif i == SERVO_4:
-                self.driver.syncWrite(P_GOAL_POSITION_L, [[SERVO_4, goal_position[2] % 256, goal_position[2] >> 8],
-                                      [SERVO_5, goal_position[2] % 256, goal_position[2] >> 8]])
-            elif i == SERVO_1:
-                self.driver.setReg(i, P_GOAL_POSITION_L, [goal_position[0] % 256, goal_position[0] >> 8])
-            elif i == SERVO_6:
-                self.driver.setReg(i, P_GOAL_POSITION_L, [goal_position[3] % 256, goal_position[3] >> 8])
-            '''while self._is_moving():  # 控制运动速度变化
-                position = self.current_position()
-                speed = [_adjusted_speed(start_position[i % 2], goal_position[i % 2], position[i % 2]) for i in SERVOS]
-                self.set_speed(speed)'''
 
     def move(self, goal_position):
         start_position = self.current_position()
         self.set_speed([MIN_SPEED, MIN_SPEED])  # input 2 MIN_SPEED here ?
         # 根据坐标旋转底部电机对准角度
-        # self.driver.setReg(1,P)
-
-        # self.driver.setReg(2,P)
-        # self.driver.setReg(3,P)
-
-        # self.driver.setReg(4,P)
-        # self.driver.setReg(5,P)
-
-        # self.driver.setReg(6,P)
         # 保持执行器末端z轴不变运动到棋子上方
         for i in SERVOS:  # 遍历电机运动，这里需要打包两对电机？ 目前只能动俩个(组)舵机
             if i == SERVO_2:
@@ -150,7 +133,10 @@ class Arm(object):
 
 def main():
     arm = Arm(port='COM3')
-    arm.move(512)
+    arm.driver_enable()
+    arm.return_to_rest_new()
+    arm.driver_disable()
+    arm.close()
 
 
 if __name__ == '__main__':
