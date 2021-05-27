@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-import serial
-import time
-import logging
 import os
 if os.name == 'nt':
     import msvcrt
@@ -20,8 +17,8 @@ else:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
 
-from dynamixel_sdk import *
-from ax12 import *
+from raspberryturk.embedded.motion.dynamixel_sdk import *
+from raspberryturk.embedded.motion.pypose.ax12 import *
 
 
 class Drivers:
@@ -29,7 +26,6 @@ class Drivers:
     through an arbotiX board or USB Dynamixel. """
     # port Windows: 'COM1' Linux: '/dev/ttyUSB0' Mac: '/dev/tty.usbserial-*'
     def __init__(self, port="/dev/ttyUSB0", baud=1000000):
-        """ This may throw errors up the line -- that's a good thing. """
         self.portHandler = PortHandler(port)
         self.packetHandler = PacketHandler(PROTOCOL_VERSION)
         self.groupSyncWrite = GroupSyncWrite(self.portHandler, self.packetHandler, ADDR_MX_GOAL_POSITION, LEN_MX_GOAL_POSITION)
@@ -55,7 +51,7 @@ class Drivers:
         elif dxl_error != 0:
             print("%s" % self.packetHandler.getRxPacketError(dxl_error))
         else:
-            print("Dynamixel has been successfully connected")
+            print("Dynamixel %d has been successfully connected" % dxl_id)
 
     def torque_disable(self, dxl_id):
         dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, ADDR_MX_TORQUE_ENABLE, TORQUE_DISABLE)
@@ -68,34 +64,53 @@ class Drivers:
         # Close port
         self.portHandler.closePort()
 
-    def read_present_position(self, dxl_id):
-        dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read2ByteTxRx(self.portHandler, dxl_id, ADDR_MX_PRESENT_POSITION)
+    """only can read 2byte"""
+    def read_2byte(self, dxl_id, address):
+        result, dxl_comm_result, dxl_error = self.packetHandler.read2ByteTxRx(self.portHandler, dxl_id, address)
         if dxl_comm_result != COMM_SUCCESS:
             print("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
         elif dxl_error != 0:
             print("%s" % self.packetHandler.getRxPacketError(dxl_error))
+        return result
+
+    def read_present_position(self, dxl_id):
+        dxl_present_position = self.read_2byte(dxl_id, ADDR_MX_PRESENT_POSITION)
         return dxl_present_position
 
+    def set_goal_position(self, dxl_id, goal_position):
+        self.setReg(dxl_id, ADDR_MX_GOAL_POSITION, goal_position)
+        while 1:
+            dxl_present_position = self.read_present_position(dxl_id)
+            print("[ID:%03d] GoalPos:%03d  PresPos:%03d" % (dxl_id, goal_position, dxl_present_position))
+            if not abs(goal_position - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD:
+                break
+
+    def set_goal_speed(self, dxl_id, speed):
+        self.setReg(dxl_id, P_GOAL_SPEED_L, speed)
+
+    def read_present_speed(self, dxl_id):
+        dxl_present_speed = self.read_2byte(dxl_id, P_GOAL_SPEED_L)
+        return dxl_present_speed
+
+    """only can write 2bytes"""
     def setReg(self, dxl_id, regstart, values):
         dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, dxl_id, regstart, values)
         if dxl_comm_result != COMM_SUCCESS:
             print("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
         elif dxl_error != 0:
             print("%s" % self.packetHandler.getRxPacketError(dxl_error))
-        while 1:
-            dxl_present_position = self.read_present_position(dxl_id)
-            print("[ID:%03d] GoalPos:%03d  PresPos:%03d" % (dxl_id, values, dxl_present_position))
-            if not abs(values - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD:
-                break
 
-    # Add Dynamixel goal position value to the Syncwrite parameter storage
+
+    """Add Dynamixel goal position value to the Syncwrite parameter storage"""
     def moter_addparam(self, dxl_id, position_goal):
         dxl_addparam_result = self.groupSyncWrite.addParam(dxl_id, position_goal)
         if dxl_addparam_result != True:
             print("[ID:%03d] groupSyncWrite addparam failed" % dxl_id)
             quit()
 
-    def syncWrite(self, regstart, vals1, vals2):
+
+    """vals[0,1]       0:dxl_id,   1:goal_position  """
+    def syncwrite_goal_position(self, vals1, vals2):
         param_goal_position1 = [DXL_LOBYTE(vals1[1]), DXL_HIBYTE(vals1[1])]
         param_goal_position2 = [DXL_LOBYTE(vals2[1]), DXL_HIBYTE(vals2[1])]
 
@@ -108,27 +123,61 @@ class Drivers:
         if dxl_comm_result != COMM_SUCCESS:
             print("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
 
-        # Clear syncwrite parameter storage
-        self.groupSyncWrite.clearParam()
         while 1:
             # Read Dynamixel#1 present position
             dxl1_present_position = self.read_present_position(vals1[0])
             dxl2_present_position = self.read_present_position(vals2[0])
 
             print("[ID:%03d] GoalPos:%03d  PresPos:%03d\t[ID:%03d] GoalPos:%03d  PresPos:%03d" % (vals1[0], vals1[1], dxl1_present_position, vals2[0], vals2[1], dxl2_present_position))
-            if not ((abs(vals1[1] - dxl1_present_position) > DXL_MOVING_STATUS_THRESHOLD) and (abs(vals2[1] - dxl2_present_position) > DXL_MOVING_STATUS_THRESHOLD)):
+            if (not (abs(vals1[1] - dxl1_present_position) > DXL_MOVING_STATUS_THRESHOLD)) and (not (abs(vals2[1] - dxl2_present_position) > DXL_MOVING_STATUS_THRESHOLD)):
                 break
+
+        # Clear syncwrite parameter storage
+        self.groupSyncWrite.clearParam()
+
+    def test1(self):
+        self.torque_enable(12)
+        self.torque_enable(7)
+        self.torque_enable(3)
+        self.set_goal_position(3, 0)
+        time.sleep(1)
+        self.set_goal_position(7, 0)
+        time.sleep(1)
+        self.set_goal_position(12, 0)
+        time.sleep(1)
+        self.syncwrite_goal_position([3, 512], [7, 512])
+        time.sleep(1)
+        self.syncwrite_goal_position([3, 1023], [12, 512])
+        time.sleep(1)
+        self.syncwrite_goal_position([7, 1023], [12, 1023])
+        self.torque_enable(12)
+        self.torque_disable(7)
+        self.torque_disable(3)
+        self.close_port()
+
+    def test2(self):
+        self.torque_enable(7)
+        self.torque_enable(3)
+        self.syncwrite_goal_position([3, 512], [7, 512])
+        self.torque_disable(7)
+        self.torque_disable(3)
+        self.close_port()
+
+    def test3(self):
+        self.torque_enable(12)
+        self.set_goal_speed(12, LOW_SPEED)
+        self.set_goal_position(12, 0)
+        self.set_goal_position(12, 1023)
+        self.torque_disable(12)
+        self.close_port()
 
 
 def main():
-    driver = Drivers()
-    driver.torque_enable(12)
-    driver.setReg(12, P_GOAL_POSITION_L, 512)
-    driver.torque_disable(12)
-    driver.close_port()
-
-
+    driver = Drivers(port="COM3")
+    driver.test3()
 
 
 if __name__ == '__main__':
     main()
+
+

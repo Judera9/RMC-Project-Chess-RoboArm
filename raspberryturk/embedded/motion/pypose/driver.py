@@ -53,10 +53,10 @@ class Driver:
         self.ser.flushInput()  # 丢弃接收缓存中的所有数据。
         length = 2 + len(params)
         checksum = 255 - ((index + length + ins + sum(params)) % 256)  # 检测总的值有没有超过255
-        self.ser.write(chr(0xFF) + chr(0xFF) + chr(index) + chr(length) + chr(ins))  # 向端口写数据。
+        self.ser.write((chr(0xFF) + chr(0xFF) + chr(index) + chr(length) + chr(ins)).encode(encoding="utf-8"))  # 向端口写数据。
         for val in params:
-            self.ser.write(chr(val))   # 写入需要的参数
-        self.ser.write(chr(checksum))
+            self.ser.write(chr(val).encode(encoding="utf-8"))   # 写入需要的参数
+        self.ser.write(chr(checksum).encode(encoding="utf-8"))
         return self.getPacket(0)
 
     def setReg(self, index, regstart, values):
@@ -68,7 +68,7 @@ class Driver:
     def getPacket(self, mode, id=-1, leng=-1, error=-1, params=None):
         """ Read a return packet, iterative attempt """
         # need a positive byte
-        d = self.ser.read()  # 从端口读字节数据。默认1个字节。
+        d = self.ser.read().decode(encoding="utf-8")  # 从端口读字节数据。默认1个字节。
         if d == '':
             self.logger.debug("Fail Read")
             return None

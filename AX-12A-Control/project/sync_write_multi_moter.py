@@ -71,7 +71,7 @@ DEVICENAME                  = 'COM3'    # Check which port is being used on your
 TORQUE_ENABLE               = 1                 # Value for enabling the torque
 TORQUE_DISABLE              = 0                 # Value for disabling the torque
 DXL_MINIMUM_POSITION_VALUE  = 100           # Dynamixel will rotate between this value
-DXL_MAXIMUM_POSITION_VALUE  = 800           # and this value (note that the Dynamixel would not move when the position value is out of movable range. Check e-manual about the range of the Dynamixel you use.)
+DXL_MAXIMUM_POSITION_VALUE  = 1023          # and this value (note that the Dynamixel would not move when the position value is out of movable range. Check e-manual about the range of the Dynamixel you use.)
 DXL_MOVING_STATUS_THRESHOLD = 20                # Dynamixel moving status threshold
 
 index = 0
@@ -133,7 +133,7 @@ def moter_addparam(ID, position_goal):
 
 # Read Dynamixel# present position
 def read_present_position(ID):
-    dxl_present_position, dxl_comm_result, dxl_error = packetHandler.read4ByteTxRx(portHandler, ID, ADDR_MX_PRESENT_POSITION)
+    dxl_present_position, dxl_comm_result, dxl_error = packetHandler.read2ByteTxRx(portHandler, ID, ADDR_MX_PRESENT_POSITION)
     if dxl_comm_result != COMM_SUCCESS:
         print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
     elif dxl_error != 0:
@@ -146,7 +146,7 @@ while 1:
         break
 
     # Allocate goal position value into byte array
-    param_goal_position = [DXL_LOBYTE(DXL_LOWORD(dxl_goal_position[index])), DXL_HIBYTE(DXL_LOWORD(dxl_goal_position[index])), DXL_LOBYTE(DXL_HIWORD(dxl_goal_position[index])), DXL_HIBYTE(DXL_HIWORD(dxl_goal_position[index]))]
+    param_goal_position = [DXL_LOBYTE(dxl_goal_position[index]), DXL_HIBYTE(dxl_goal_position[index])]
 
     # Add Dynamixel#1-3 goal position value to the Syncwrite parameter storage
     moter_addparam(DXL1_ID, param_goal_position);
@@ -164,7 +164,7 @@ while 1:
     while 1:
         # Read Dynamixel#1 present position
         dxl1_present_position = read_present_position(DXL1_ID);
-        dxl2_present_position = read_present_position(DXL1_ID);
+        dxl2_present_position = read_present_position(DXL2_ID);
         ## dxl3_present_position = read_present_position(DXL1_ID);
 
 
@@ -174,13 +174,6 @@ while 1:
         if not ((abs(dxl_goal_position[index] - dxl1_present_position) > DXL_MOVING_STATUS_THRESHOLD) and (abs(dxl_goal_position[index] - dxl2_present_position) > DXL_MOVING_STATUS_THRESHOLD)):
             break
 
-
-        # print("[ID:%03d] GoalPos:%03d  PresPos:%03d\t[ID:%03d] GoalPos:%03d  PresPos:%03d\t[ID:%03d] GoalPos:%03d  PresPos:%03d"
-        #  % (DXL1_ID, dxl_goal_position[index], dxl1_present_position, DXL2_ID, dxl_goal_position[index], dxl2_present_position, DXL3_ID, dxl_goal_position[index], dxl3_present_position))
-
-        # if not ((abs(dxl_goal_position[index] - dxl1_present_position) > DXL_MOVING_STATUS_THRESHOLD) and (abs(dxl_goal_position[index] - dxl2_present_position) > DXL_MOVING_STATUS_THRESHOLD)
-        #  and (abs(dxl_goal_position[index] - dxl3_present_position) > DXL_MOVING_STATUS_THRESHOLD)):
-        #     break
     # Change goal position
     if index == 0:
         index = 1

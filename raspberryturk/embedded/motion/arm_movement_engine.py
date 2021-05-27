@@ -60,7 +60,7 @@ def _load_tree(logger):
 class ArmMovementEngine(object):
     def __init__(self):
         logger = logging.getLogger(__name__)
-        self._tree = _load_tree(logger)
+        # self._tree = _load_tree(logger)
 
     def convert_point(self, pt):  # 在二维坐标系中，将（x,y）转化为俩个关节的角度
         pt = np.array(pt).reshape(-1, 2)  # reshape
