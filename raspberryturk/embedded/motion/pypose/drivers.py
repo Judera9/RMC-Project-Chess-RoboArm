@@ -121,14 +121,20 @@ class Drivers:
 
 
 def main():
-    driver = Drivers()
+    driver = Drivers(port="COM3")
     driver.torque_enable(12)
+    # driver.torque_enable(7)
+    # driver.torque_enable(3)
     driver.setReg(12, P_GOAL_POSITION_L, 512)
+    # time.sleep(1)
+    # driver.syncWrite(P_GOAL_POSITION_L, [3, 512], [7, 512])
     driver.torque_disable(12)
+    # driver.torque_disable(7)
+    # driver.torque_disable(3)
     driver.close_port()
-
-
 
 
 if __name__ == '__main__':
     main()
+
+
