@@ -75,6 +75,9 @@ class Arm(object):
         print('[INFO] joint_list is:', joint_list)
         self.move_new((joint1_teeth, joint2_teeth, joint3_teeth, joint4_teeth))
 
+    def sycn_return_to_rest_new(self):
+        self.move_new1((512, 512, 512, 512, 512, 512))
+
     def driver_enable(self):
         for i in SERVOS_TOTAL:
             self.driver.torque_enable(i)
@@ -92,8 +95,9 @@ class Arm(object):
         goal_position = 1
         return  goal_position
 
-    def move_new1(self, goal_position):
+    def move_new1(self, position):
         # start_position = self.current_position()
+        goal_position = [position[0], position[1], 1023-position[1], position[2], 1023-position[2], position[3]]
         self.set_driver_low_speed()
         self.driver.syncwrite_more_goal_position(SERVOS_TOTAL, goal_position)
 
@@ -114,11 +118,6 @@ class Arm(object):
         while self._is_moving():  # 控制运动速度变化
             position = self.get_SERVO6_position()
             self.driver.set_goal_position(SERVO_6, position)
-
-                self.driver.syncwrite_goal_position([SERVO_4, goal_position[2]], [SERVO_5, 1023 - goal_position[2]])
-            elif i == SERVO_6:
-                self.driver.set_goal_position(i, goal_position[3])
-
 
     def move(self, goal_position):
         start_position = self.current_position()
@@ -179,6 +178,13 @@ class Arm(object):
 
 
 def main():
+    """
+    arm = Arm(port='COM3')
+    arm.driver_enable()
+    arm.sycn_return_to_rest_new()
+    time.sleep(5)
+    arm.driver_disable()
+    arm.close()"""
 
     # arm = Arm(port='COM3')
     # arm.driver_enable()
@@ -238,8 +244,8 @@ def main():
     # joint4_angle = arm.rad2teeth(place_solved_angles[2], 4)
     # arm.return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
 
-    arm.driver_disable()
-    arm.close()
+
+
 
 
 if __name__ == '__main__':
