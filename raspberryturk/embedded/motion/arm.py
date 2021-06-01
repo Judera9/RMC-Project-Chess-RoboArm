@@ -1,5 +1,7 @@
 # import time
 # import serial
+import time
+
 import numpy as np
 from pytweening import easeInOutQuint, easeOutSine
 from scipy.misc import derivative
@@ -18,7 +20,7 @@ SERVOS = [SERVO_1, SERVO_2, SERVO_4, SERVO_6 ]
 SERVOS_TOTAL = [SERVO_1, SERVO_2, SERVO_3, SERVO_4, SERVO_5, SERVO_6 ]
 MIN_SPEED = 20
 MAX_SPEED = 80
-RESTING_POSITION = (512, 512, 512,512)
+RESTING_POSITION = (512, 512, 512, 512)
 
 
 # 输入一个list，返回list的第一位，和第二位二进制向左移8个0后对应的10进制的数
@@ -73,6 +75,14 @@ class Arm(object):
         for i in SERVOS_TOTAL:
             self.driver.setReg(i, P_GOAL_SPEED_L, LOW_SPEED)
 
+    def get_SERVO6_position(self):
+        goal_position = 1
+        return  goal_position
+
+    def move_new1(self, goal_position):
+        # start_position = self.current_position()
+        self.set_driver_low_speed()
+        self.driver.syncwrite_more_goal_position(SERVOS_TOTAL, goal_position)
 
     def move_new(self, goal_position):
         # start_position = self.current_position()
@@ -84,9 +94,11 @@ class Arm(object):
                 self.driver.syncwrite_goal_position([SERVO_2, goal_position[1]], [SERVO_3, 1023-goal_position[1]])
             elif i == SERVO_4:
                 self.driver.syncwrite_goal_position([SERVO_4, goal_position[2]], [SERVO_5, 1023-goal_position[2]])
-            elif i == SERVO_6:
-                self.driver.set_goal_position(i, goal_position[3])
-
+            """elif i == SERVO_6:
+                self.driver.set_goal_position(i, goal_position[3])"""
+        while self._is_moving():  # 控制运动速度变化
+            position = self.get_SERVO6_position()
+            self.driver.set_goal_position(SERVO_6, position)
 
     def move(self, goal_position):
         start_position = self.current_position()
@@ -122,10 +134,16 @@ class Arm(object):
             self.driver.setReg(i, P_GOAL_SPEED_L, [speed[i % 2] % 256, speed[i % 2] >> 8])
 
     def current_position(self):
-        return self._values_for_register(P_PRESENT_POSITION_L)
+        return self._values_for_register_new(P_PRESENT_POSITION_L)
+
+    def _is_moving_new(self):
+        return any([self.driver.read_1byte(index, P_MOVING) == 1 for index in SERVOS_TOTAL])
 
     def _is_moving(self):
         return any([self.driver.getReg(index, P_MOVING, 1) == 1 for index in SERVOS])
+
+    def _values_for_register_new(self, register):
+        return [_register_bytes_to_value(self.driver.read_2byte(index, register)) for index in SERVOS]
 
     def _values_for_register(self, register):
         return [_register_bytes_to_value(self.driver.getReg(index, register, 2)) for index in SERVOS]
@@ -135,6 +153,7 @@ def main():
     arm = Arm(port='COM3')
     arm.driver_enable()
     arm.return_to_rest_new()
+    time.sleep(5)
     arm.driver_disable()
     arm.close()
 

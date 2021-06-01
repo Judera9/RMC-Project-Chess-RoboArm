@@ -46,7 +46,8 @@ else:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
 
-from dynamixel_sdk import *                    # Uses Dynamixel SDK library
+# from dynamixel_sdk import *  # Uses Dynamixel SDK library
+from AX_12A_Control.src.dynamixel_sdk import *  # Uses Dynamixel SDK library
 
 # Control table address
 ADDR_MX_TORQUE_ENABLE      = 24               # Control table address is different in Dynamixel model
@@ -97,7 +98,7 @@ if portHandler.openPort():
 else:
     print("Failed to open the port")
     print("Press any key to terminate...")
-    getch()
+    # getch()
     quit()
 
 
@@ -122,7 +123,7 @@ def enable_moter_torque(ID):
 # Enable Dynamixel#1-3 Torque
 enable_moter_torque(DXL1_ID);
 enable_moter_torque(DXL2_ID);
-## enable_moter_torque(DXL3_ID);
+enable_moter_torque(DXL3_ID);
 
 # Add Dynamixel goal position value to the Syncwrite parameter storage
 def moter_addparam(ID, position_goal):
@@ -138,11 +139,15 @@ def read_present_position(ID):
         print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
     elif dxl_error != 0:
         print("%s" % packetHandler.getRxPacketError(dxl_error))    
-    return dxl_present_position;
+    return dxl_present_position
+
+a = 0
 
 while 1:
     print("Press any key to continue! (or press ESC to quit!)")
-    if getch() == chr(0x1b):
+    """if getch() == chr(0x1b):
+        break"""
+    if a == 2:
         break
 
     # Allocate goal position value into byte array
@@ -151,7 +156,7 @@ while 1:
     # Add Dynamixel#1-3 goal position value to the Syncwrite parameter storage
     moter_addparam(DXL1_ID, param_goal_position);
     moter_addparam(DXL2_ID, param_goal_position);
-    ## moter_addparam(DXL3_ID, param_goal_position);
+    moter_addparam(DXL3_ID, param_goal_position);
 
     # Syncwrite goal position
     dxl_comm_result = groupSyncWrite.txPacket()
@@ -165,7 +170,7 @@ while 1:
         # Read Dynamixel#1 present position
         dxl1_present_position = read_present_position(DXL1_ID);
         dxl2_present_position = read_present_position(DXL2_ID);
-        ## dxl3_present_position = read_present_position(DXL1_ID);
+        dxl3_present_position = read_present_position(DXL1_ID);
 
 
         print("[ID:%03d] GoalPos:%03d  PresPos:%03d\t[ID:%03d] GoalPos:%03d  PresPos:%03d"
@@ -174,6 +179,7 @@ while 1:
         if not ((abs(dxl_goal_position[index] - dxl1_present_position) > DXL_MOVING_STATUS_THRESHOLD) and (abs(dxl_goal_position[index] - dxl2_present_position) > DXL_MOVING_STATUS_THRESHOLD)):
             break
 
+    a = a+1
     # Change goal position
     if index == 0:
         index = 1
@@ -192,7 +198,7 @@ def disable_dynamixel_torque(ID):
 # Disable Dynamixel#1-3 Torque
 disable_dynamixel_torque(DXL1_ID);
 disable_dynamixel_torque(DXL2_ID);
-# disable_dynamixel_torque(DXL3_ID);
+disable_dynamixel_torque(DXL3_ID);
 
 # Close port
 portHandler.closePort()
