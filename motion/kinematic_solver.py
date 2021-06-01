@@ -16,6 +16,8 @@ d_2 = 0
 alpha_1 = 0
 alpha_2 = 0
 
+# FIXME: adjust the left parameter
+
 
 def dh_matrix(delta, d, a, alpha):  # transform matrix of DH
     return np.array([[cos(delta), -sin(delta) * cos(alpha), sin(delta) * sin(alpha), a * cos(delta)],
@@ -85,12 +87,17 @@ def star_to_des_solver(star_position_3_1, des_position_3_1, show):
         print('!!![WARN]!!! piece heights changed, something might be wrong')
     if star_position_3_1 == des_position_3_1:
         print('!!![WARN]!!! position haven\'t changed in inputs')
-    pick_solved_angles = ik_solver([star_position_3_1[1], star_position_3_1[2] + 0.2], show)[0]
+    solved_angles = list()
+    pick_solved_angles = ik_solver([star_position_3_1[1], star_position_3_1[2] + 0.1], show)[0]
+    solved_angles.append(pick_solved_angles)
     base_solved_angle = base_solver(des_position_3_1[0:2])
-    move_2_solved_angles = ik_solver([des_position_3_1[1], des_position_3_1[2] + 0.2], show)[0]
+    solved_angles.append(base_solved_angle)
+    move_2_solved_angles = ik_solver([des_position_3_1[1], des_position_3_1[2] + 0.1], show)[0]
+    solved_angles.append(move_2_solved_angles)
     place_solved_angles = ik_solver([des_position_3_1[2] + 0.2, des_position_3_1[2]], show)[0]
-    solved_angles = {'pick_solved_angles': pick_solved_angles, 'base_solved_angle': base_solved_angle,
-                     'move_2_solved_angles': move_2_solved_angles, 'place_solved_angles': place_solved_angles}
+    solved_angles.append(place_solved_angles)
+    # solved_angles = {'pick_solved_angles': pick_solved_angles, 'base_solved_angle': base_solved_angle,
+    #                  'move_2_solved_angles': move_2_solved_angles, 'place_solved_angles': place_solved_angles}
     print('------------------->>> solved angles to archive the motion:\n', solved_angles)
     return solved_angles
 
@@ -143,4 +150,8 @@ def position_plot(joint_positions, des=None, is_from_to=False):
 # ik_plot_from_to([0.3, 0.2], [0.2, 0.2])
 # ik_plot_from_to([0.2, 0.2], [0.2, 0.03])
 
-star_to_des_solver([0.3, 0.3, 0.03], [0.3, 0.2, 0.03], True)
+# star_to_des_solver([0.3, 0.2, 0.03], [0.15, 0.2, 0.03], True)
+# {'pick_solved_angles': [1.053612606132627, -0.8869417850622838, 1.7374208210703432],
+#  'base_solved_angle': 0.982793723247329,
+#  'move_2_solved_angles': [1.5256459016886366, -1.5159843696859385, 1.5804115320026981],
+#  'place_solved_angles': [0.9790411018349913, -1.9784215832865615, 0.5713695185484299]}
