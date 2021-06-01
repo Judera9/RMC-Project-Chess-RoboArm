@@ -28,7 +28,8 @@
 # Be sure that DXL MX properties are already set as %% ID : 1 / Baudnum : 34 (Baudrate : 57600)
 #
 import os
-from dynamixel_sdk import *  # Uses Dynamixel SDK library
+# from dynamixel_sdk import *  # Uses Dynamixel SDK library
+from AX_12A_Control.src.dynamixel_sdk import *  # Uses Dynamixel SDK library
 
 if os.name == 'nt':
     import msvcrt

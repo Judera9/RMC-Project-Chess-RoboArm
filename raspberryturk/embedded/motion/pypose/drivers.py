@@ -73,6 +73,14 @@ class Drivers:
             print("%s" % self.packetHandler.getRxPacketError(dxl_error))
         return result
 
+    def read_1byte(self, dxl_id, address):
+        result, dxl_comm_result, dxl_error = self.packetHandler.read1ByteTxRx(self.portHandler, dxl_id, address)
+        if dxl_comm_result != COMM_SUCCESS:
+            print("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
+        elif dxl_error != 0:
+            print("%s" % self.packetHandler.getRxPacketError(dxl_error))
+        return result
+
     def read_present_position(self, dxl_id):
         dxl_present_position = self.read_2byte(dxl_id, ADDR_MX_PRESENT_POSITION)
         return dxl_present_position
@@ -107,6 +115,32 @@ class Drivers:
         if dxl_addparam_result != True:
             print("[ID:%03d] groupSyncWrite addparam failed" % dxl_id)
             quit()
+
+    """vals[0,1]       0:dxl_id,   1:goal_position  """
+    def syncwrite_more_goal_position(self, ids, vals):
+        param_goal_position = [[DXL_LOBYTE(vals[i]), DXL_HIBYTE(vals[i])] for i in ids]
+
+        # Add Dynamixel#1-3 goal position value to the Syncwrite parameter storage
+        for i in ids:
+            self.moter_addparam(ids[i], vals[i])
+
+        # Syncwrite goal position
+        dxl_comm_result = self.groupSyncWrite.txPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            print("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
+
+        # Clear syncwrite parameter storage
+        self.groupSyncWrite.clearParam()
+
+        while 1:
+            # Read Dynamixel#1 present position
+            dxl_present_position = [self.read_present_position([i]) for i in ids]
+
+            for i in ids:
+                print("[ID:%03d] GoalPos:%03d PresPos:%03d" % (ids[i], vals[i], dxl_present_position[i]))
+
+            if not any([(abs(vals[i] - dxl_present_position[i]) > DXL_MOVING_STATUS_THRESHOLD) for i in ids]):
+                break
 
 
     """vals[0,1]       0:dxl_id,   1:goal_position  """
@@ -150,6 +184,7 @@ class Drivers:
         self.syncwrite_goal_position([3, 1023], [12, 512])
         time.sleep(1)
         self.syncwrite_goal_position([7, 1023], [12, 1023])
+        time.sleep(3)
         self.torque_enable(12)
         self.torque_disable(7)
         self.torque_disable(3)
@@ -174,7 +209,7 @@ class Drivers:
 
 def main():
     driver = Drivers(port="COM3")
-    driver.test3()
+    driver.test1()
 
 
 if __name__ == '__main__':
