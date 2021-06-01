@@ -1,3 +1,5 @@
+import math
+
 import numpy
 import numpy as np
 from numpy import sin, cos, arctan2
@@ -16,7 +18,10 @@ d_2 = 0
 alpha_1 = 0
 alpha_2 = 0
 constant_err = 0.170
-gripper_err = 0.075
+gripper_err = 0.038
+raise_height = 0.1
+gripper_height = 0.075
+
 
 # FIXME: adjust the left parameter
 
@@ -28,29 +33,31 @@ def dh_matrix(delta, d, a, alpha):  # transform matrix of DH
                      [0, 0, 0, 1]])
 
 
-def fk(theta_1, theta_2):
-    position_0 = np.array([0, 0, 0, 1]).T  # transpose, column vector
-    position_1 = np.array([0, 0, 0, 1]).T
-    position_2 = np.array([0, 0, 0, 1]).T
+# def fk(theta_1, theta_2):
+#     position_0 = np.array([0, 0, 0, 1]).T  # transpose, column vector
+#     position_1 = np.array([0, 0, 0, 1]).T
+#     position_2 = np.array([0, 0, 0, 1]).T
+#     position1_0 = dh_matrix(theta_1, d_1, l_1, alpha_1).dot(position_1)  # results of end of link1 position
+#     position2_0 = dh_matrix(theta_1, d_1, l_1, alpha_1).dot(dh_matrix(theta_2, d_2, l_2, alpha_2)).dot(
+#         position_2)  # link2
+#     return [position_0, position1_0, position2_0]  # positions of links' end
 
-    position1_0 = dh_matrix(theta_1, d_1, l_1, alpha_1).dot(position_1)  # results of end of link1 position
-    position2_0 = dh_matrix(theta_1, d_1, l_1, alpha_1).dot(dh_matrix(theta_2, d_2, l_2, alpha_2)).dot(
-        position_2)  # link2
-    return [position_0, position1_0, position2_0]  # positions of links' end
 
-
-def fk_solver(theta_1, theta_2, show):  # theta_2 multiply a minus here because we use upper elbow
-    print('>>> RUNNING INTO FK_SOLVER')
-    theta_1_rad = np.radians(theta_1)
-    theta_2_rad = np.radians(-theta_2)
-    print('[INFO] Input [theta_1 theta_2] in deg:', [theta_1, -theta_2])
-    joint_positions = fk(theta_1_rad, theta_2_rad)
-    if show:
-        position_plot(joint_positions)
-    return joint_positions
+# def fk_solver(theta_1, theta_2, show):  # theta_2 multiply a minus here because we use upper elbow
+#     print('RUNNING INTO FK_SOLVER')
+#     theta_1_rad = np.radians(theta_1)
+#     theta_2_rad = np.radians(-theta_2)
+#     if show:
+#         print('[INFO] Input [theta_1 theta_2] in degree:', [theta_1, -theta_2])
+#     joint_positions = fk(theta_1_rad, theta_2_rad)
+#     if show:
+#         position_plot(joint_positions)
+#     return joint_positions
 
 
 def ik(des_position_3_1, show_error):
+    if show_error:
+        print('[INFO] destination in ik is (minus error):', des_position_3_1)
     position_0 = np.array([0, 0, 0, 1]).T
     position_1 = np.array([0, 0, 0, 1]).T
     position_2 = np.array([0, 0, 0, 1]).T
@@ -60,49 +67,60 @@ def ik(des_position_3_1, show_error):
     theta_1 = arctan2(des_position_3_1[1], des_position_3_1[0]) - arctan2(l_2 * sin(theta_2), l_1 + l_2 * cos(theta_2))
     theta_3 = theta_1 + theta_2 + 3.1415 / 2
 
-    print('[INFO] Output [theta_1 theta_2 theta_3] in deg:', numpy.degrees([theta_1, theta_2, theta_3]))
+    if show_error:
+        print('[INFO] Output [theta_1 theta_2 theta_3] in degree:', numpy.degrees([theta_1, theta_2, theta_3]))
 
     position1_0 = dh_matrix(theta_1, d_1, l_1, alpha_1).dot(position_1)
     position2_0 = dh_matrix(theta_1, d_1, l_1, alpha_1).dot(dh_matrix(theta_2, d_2, l_2, alpha_2)).dot(position_2)
     return [[theta_1, theta_2, theta_3], [position_0, position1_0, position2_0]]  # positions of links' end
 
 
-def ik_solver(des_position_3_1, show):
-    print('>>> RUNNING INTO IK_SOLVER')
-    print('[INFO] destination of the end:', des_position_3_1)
+def ik_solver(des_position_3_1, show):  # FIXME: adjust gripper error, constant error
+    print('RUNNING INTO IK_SOLVER')
+    if show:
+        print('[INFO] destination of the end:', des_position_3_1)
     des_position_3_1 = [des_position_3_1[0] - gripper_err, des_position_3_1[1]]
     angles, joint_positions = ik(des_position_3_1, True)
-    angles = [angles[0] + constant_err, angles[1] - constant_err, angles[2]]
+    angles = [angles[0] + constant_err, angles[1] + constant_err, angles[2]]  # FIXME: checkout + and -
     if show:
         position_plot(joint_positions, des=des_position_3_1)
     return [angles, joint_positions]
 
 
-def base_solver(des_position_1_0):
-    print('>>> RUNNING INTO BASE_SOLVER')
+def base_solver(des_position_1_0, show):
+    print('RUNNING INTO BASE_SOLVER')
     des_angle = arctan2(des_position_1_0[0], des_position_1_0[1])
-    print('[INFO] base angle after rotation is:', des_angle)
+    if show:
+        print('[INFO] base angle after rotation is:', des_angle)
     return des_angle
 
 
 def star_to_des_solver(star_position_3_1, des_position_3_1, show):
-    print('>>> RUNNING INTO START TO DESTINATION SOLVER')
+    print('RUNNING INTO START TO DESTINATION SOLVER')
     if star_position_3_1[2] != des_position_3_1[2]:
-        print('!!![WARN]!!! piece heights changed, something might be wrong')
+        print('[WARN] piece heights changed, something might be wrong')
     if star_position_3_1 == des_position_3_1:
-        print('!!![WARN]!!! position haven\'t changed in inputs')
+        print('[WARN] position haven\'t changed in inputs')
     solved_angles = list()
-    pick_solved_angles = ik_solver([star_position_3_1[1], star_position_3_1[2] + 0.1], show)[0]
+
+    ik_x_length_start = math.sqrt(star_position_3_1[0] ** 2 + star_position_3_1[1] ** 2)
+    ik_x_length_end = math.sqrt(des_position_3_1[0] ** 2 + des_position_3_1[1] ** 2)
+
+    pick_solved_angles = ik_solver([ik_x_length_start, star_position_3_1[2] + raise_height], show)[0]
     solved_angles.append(pick_solved_angles)
-    base_solved_angle = base_solver(des_position_3_1[0:2])
+
+    base_solved_angle = base_solver(des_position_3_1[0:2], show)
     solved_angles.append(base_solved_angle)
-    move_2_solved_angles = ik_solver([des_position_3_1[1], des_position_3_1[2] + 0.1], show)[0]
+
+    move_2_solved_angles = ik_solver([ik_x_length_end, des_position_3_1[2] + raise_height], show)[0]
     solved_angles.append(move_2_solved_angles)
-    place_solved_angles = ik_solver([des_position_3_1[2] + 0.2, des_position_3_1[2]], show)[0]
+
+    place_solved_angles = ik_solver([ik_x_length_end, des_position_3_1[2]], show)[0]
     solved_angles.append(place_solved_angles)
-    # solved_angles = {'pick_solved_angles': pick_solved_angles, 'base_solved_angle': base_solved_angle,
-    #                  'move_2_solved_angles': move_2_solved_angles, 'place_solved_angles': place_solved_angles}
-    # print('------------------->>> solved angles to archive the motion:\n', solved_angles)
+
+    if show:
+        print('[INFO] solved angles to archive the motion:\n', solved_angles[0], '\n', solved_angles[1], '\n',
+              solved_angles[2])
     return solved_angles
 
 
@@ -123,20 +141,20 @@ def position_plot(joint_positions, des=None, is_from_to=False):
     if not is_from_to:
         ax.plot([joint_positions[0][0], joint_positions[1][0], joint_positions[2][0]],
                 [joint_positions[0][1], joint_positions[1][1], joint_positions[2][1]], '-bo')
-        print('[INFO] position of joint0:', joint_positions[0][0:2])
-        print('[INFO] position of joint1:', joint_positions[1][0:2])
-        print('[INFO] position of joint2:', joint_positions[2][0:2])
+        # print('[INFO] position of joint0:', joint_positions[0][0:2])
+        # print('[INFO] position of joint1:', joint_positions[1][0:2])
+        # print('[INFO] position of joint2:', joint_positions[2][0:2])
     else:
         joint_positions_list = joint_positions
         for i in range(len(joint_positions_list)):
             ax.plot([joint_positions_list[i][0][0], joint_positions_list[i][1][0], joint_positions_list[i][2][0]],
                     [joint_positions_list[i][0][1], joint_positions_list[i][1][1],
                      joint_positions_list[i][2][1]], '-bo')
-            print('[INFO] position of joint0:', joint_positions_list[i][0][0:2])
-            print('[INFO] position of joint1:', joint_positions_list[i][1][0:2])
-            print('[INFO] position of joint2:', joint_positions_list[i][2][0:2])
+            # print('[INFO] position of joint0:', joint_positions_list[i][0][0:2])
+            # print('[INFO] position of joint1:', joint_positions_list[i][1][0:2])
+            # print('[INFO] position of joint2:', joint_positions_list[i][2][0:2])
     if des is not None:
-        ax.plot(des[0], des[1], '-rx')
+        ax.plot(des[0], des[1] - gripper_height, '-rx')
     ax.set_xlabel('x (m)')
     ax.set_ylabel('y (m)')
     plt.xlim(0, 0.5)
@@ -154,7 +172,7 @@ def position_plot(joint_positions, des=None, is_from_to=False):
 # ik_plot_from_to([0.3, 0.2], [0.2, 0.2])
 # ik_plot_from_to([0.2, 0.2], [0.2, 0.03])
 
-# star_to_des_solver([0.3, 0.2, 0.03], [0.15, 0.2, 0.03], True)
+star_to_des_solver([0.1, 0.1, 0.05], [0.2, 0.1, 0.05], True)
 # {'pick_solved_angles': [1.053612606132627, -0.8869417850622838, 1.7374208210703432],
 #  'base_solved_angle': 0.982793723247329,
 #  'move_2_solved_angles': [1.5256459016886366, -1.5159843696859385, 1.5804115320026981],

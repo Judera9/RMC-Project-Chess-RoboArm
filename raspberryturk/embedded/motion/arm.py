@@ -115,10 +115,6 @@ class Arm(object):
             position = self.get_SERVO6_position()
             self.driver.set_goal_position(SERVO_6, position)
 
-                self.driver.syncwrite_goal_position([SERVO_4, goal_position[2]], [SERVO_5, 1023 - goal_position[2]])
-            elif i == SERVO_6:
-                self.driver.set_goal_position(i, goal_position[3])
-
 
     def move(self, goal_position):
         start_position = self.current_position()
