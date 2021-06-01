@@ -110,4 +110,4 @@ DXL_MOVING_STATUS_THRESHOLD = 20           # Dynamixel moving status threshold
 WHEEL_MODE = 0
 JOINT_MODE = 1023
 
-LOW_SPEED = 100
+LOW_SPEED = 50

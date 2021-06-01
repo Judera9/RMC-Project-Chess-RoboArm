@@ -74,8 +74,13 @@ class Arm(object):
         print('[INFO] joint_list is:', joint_list)
         self.move_new((joint1_teeth, joint2_teeth, joint3_teeth, joint4_teeth))
 
-    def sycn_return_to_rest_new(self):
-        self.move_new1((512, 512, 512, 512, 512, 512))
+    def sycn_return_to_rest_new(self, joint_list):
+        joint1_teeth = joint_list[0]
+        joint2_teeth = joint_list[1]
+        joint3_teeth = joint_list[2]
+        joint4_teeth = joint_list[3]
+        print('[INFO] joint_list is:', joint_list)
+        self.move_new1((joint1_teeth, joint2_teeth, joint3_teeth, joint4_teeth))
 
     def driver_enable(self):
         for i in SERVOS_TOTAL:
@@ -163,10 +168,6 @@ class Arm(object):
     def _values_for_register(self, register):
         return [_register_bytes_to_value(self.driver.getReg(index, register, 2)) for index in SERVOS]
 
-    # def teeth2rad(self, teeth):
-    #     max_teeth = 1024
-    #     return 2 * math.pi * (teeth // 1024)
-
     def rad2teeth(self, rad, joint_num):
         if joint_num == 1 or joint_num == 2 or joint_num == 4:
             return int((240 - (rad * 180 // math.pi)) / 0.292969)
@@ -175,13 +176,12 @@ class Arm(object):
 
 
 def main():
-    """
-    arm = Arm(port='COM3')
-    arm.driver_enable()
-    arm.sycn_return_to_rest_new()
-    time.sleep(5)
-    arm.driver_disable()
-    arm.close()"""
+    # arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
+    # arm.driver_enable()
+    # arm.sycn_return_to_rest_new()
+    # time.sleep(5)
+    # arm.driver_disable()
+    # arm.close()
 
     # arm = Arm(port='COM3')
     # arm.driver_enable()
@@ -189,57 +189,76 @@ def main():
     # time.sleep(5)
 
     arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
-    # # arm.driver_enable()
-    # # # start -> end: [0.3, 0.3, 0.03], [0.3, 0.2, 0.03]
-    # # # arm.return_to_rest_new([512, 512, 200, 512])
-    # # # ks.star_to_des_solver()
-    #
-    # """
-    # Here is the test for ik_solver
-    # """
-    #
-    # angles, _ = ks.ik_solver([0.3, 0.1], False)
+    arm.driver_enable()
+    arm.set_driver_low_speed()
+    # # angles, _ = ks.ik_solver([math.sqrt(0.2 ** 2 + 0.1 ** 2), 0.075], True)
+    # angles, _ = ks.ik_solver([ks.l_2 + ks.gripper_err, ks.l_1], True)
     # print('[INFO] angles sloved by ik:', angles)
     # joint1_angle = arm.rad2teeth(0, 2)
     # joint2_angle = arm.rad2teeth(angles[0], 2)
     # joint3_angle = arm.rad2teeth(angles[1], 3)
     # joint4_angle = arm.rad2teeth(angles[2], 4)
-    # arm.return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-    #
-    # """
-    # Here is the test for start_to_end
-    # """
-    #
-    # solved_angles = ks.star_to_des_solver([0.3, 0.2, 0.1], [0.15, 0.2, 0.1], False)
-    # print('[INFO] solved_angles:', solved_angles)
-    # pick_solved_angles = solved_angles[0]
-    # base_solved_angle = solved_angles[1]
-    # move_2_solved_angles = solved_angles[2]
-    # place_solved_angles = solved_angles[3]
-    #
-    # # joint1_angle = arm.rad2teeth(0, 2)
+    # arm.sycn_return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+
+    """
+    Here is the test for ik_solver
+    """
+
+    angles, _ = ks.ik_solver([math.sqrt(0.2 ** 2 + 0.1 ** 2), 0.05], False)
+    print('[INFO] angles sloved by ik:', angles)
+    joint1_angle = arm.rad2teeth(0, 2)
+    joint2_angle = arm.rad2teeth(angles[0], 2)
+    joint3_angle = arm.rad2teeth(angles[1], 3)
+    joint4_angle = arm.rad2teeth(angles[2], 4)
+    arm.sycn_return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(3)
+
+    """
+    Here is the test for start_to_end
+    """
+
+    solved_angles = ks.star_to_des_solver([0.2, 0.1, 0.075], [0.3, 0.1, 0.075], False)
+    print('[INFO] solved_angles:', solved_angles)
+    pick_solved_angles = solved_angles[0]
+    base_solved_angle = solved_angles[1]
+    move_2_solved_angles = solved_angles[2]
+    place_solved_angles = solved_angles[3]
+
+    # joint1_angle = arm.rad2teeth(0, 2)
+    joint2_angle = arm.rad2teeth(pick_solved_angles[0], 2)
+    joint3_angle = arm.rad2teeth(pick_solved_angles[1], 3)
+    joint4_angle = arm.rad2teeth(pick_solved_angles[2], 4)
+    arm.sycn_return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(3)
+
+    joint1_angle = arm.rad2teeth(base_solved_angle, 2)
     # joint2_angle = arm.rad2teeth(pick_solved_angles[0], 2)
     # joint3_angle = arm.rad2teeth(pick_solved_angles[1], 3)
     # joint4_angle = arm.rad2teeth(pick_solved_angles[2], 4)
-    # arm.return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-    #
+    arm.sycn_return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(3)
+
     # joint1_angle = arm.rad2teeth(base_solved_angle, 2)
-    # # joint2_angle = arm.rad2teeth(pick_solved_angles[0], 2)
-    # # joint3_angle = arm.rad2teeth(pick_solved_angles[1], 3)
-    # # joint4_angle = arm.rad2teeth(pick_solved_angles[2], 4)
-    # arm.return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-    #
-    # # joint1_angle = arm.rad2teeth(base_solved_angle, 2)
-    # joint2_angle = arm.rad2teeth(move_2_solved_angles[0], 2)
-    # joint3_angle = arm.rad2teeth(move_2_solved_angles[1], 3)
-    # joint4_angle = arm.rad2teeth(move_2_solved_angles[2], 4)
-    # arm.return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-    #
-    # # joint1_angle = arm.rad2teeth(base_solved_angle, 2)
-    # joint2_angle = arm.rad2teeth(place_solved_angles[0], 2)
-    # joint3_angle = arm.rad2teeth(place_solved_angles[1], 3)
-    # joint4_angle = arm.rad2teeth(place_solved_angles[2], 4)
-    # arm.return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+    joint2_angle = arm.rad2teeth(move_2_solved_angles[0], 2)
+    joint3_angle = arm.rad2teeth(move_2_solved_angles[1], 3)
+    joint4_angle = arm.rad2teeth(move_2_solved_angles[2], 4)
+    arm.sycn_return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(3)
+
+    joint1_angle = arm.rad2teeth(base_solved_angle, 2)
+    joint2_angle = arm.rad2teeth(place_solved_angles[0], 2)
+    joint3_angle = arm.rad2teeth(place_solved_angles[1], 3)
+    joint4_angle = arm.rad2teeth(place_solved_angles[2], 4)
+    arm.sycn_return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(10)
+    arm.driver_disable()
+    arm.close()
 
 
 if __name__ == '__main__':
