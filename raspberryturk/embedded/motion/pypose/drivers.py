@@ -143,7 +143,6 @@ class Drivers:
             if not any([(abs(vals[i] - dxl_present_position[i]) > DXL_MOVING_STATUS_THRESHOLD) for i in list]):
                 break
 
-
     """vals[0,1]       0:dxl_id,   1:goal_position  """
     def syncwrite_goal_position(self, vals1, vals2):
         param_goal_position1 = [DXL_LOBYTE(vals1[1]), DXL_HIBYTE(vals1[1])]
