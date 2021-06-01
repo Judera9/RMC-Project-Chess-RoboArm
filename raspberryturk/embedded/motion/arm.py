@@ -63,6 +63,9 @@ class Arm(object):
     def return_to_rest_new(self):
         self.move_new((512, 512, 512, 512))
 
+    def sycn_return_to_rest_new(self):
+        self.move_new1((512, 512, 512, 512, 512, 512))
+
     def driver_enable(self):
         for i in SERVOS_TOTAL:
             self.driver.torque_enable(i)
@@ -79,8 +82,9 @@ class Arm(object):
         goal_position = 1
         return  goal_position
 
-    def move_new1(self, goal_position):
+    def move_new1(self, position):
         # start_position = self.current_position()
+        goal_position = [position[0], position[1], 1023-position[1], position[2], 1023-position[2], position[3]]
         self.set_driver_low_speed()
         self.driver.syncwrite_more_goal_position(SERVOS_TOTAL, goal_position)
 
@@ -152,7 +156,7 @@ class Arm(object):
 def main():
     arm = Arm(port='COM3')
     arm.driver_enable()
-    arm.return_to_rest_new()
+    arm.sycn_return_to_rest_new()
     time.sleep(5)
     arm.driver_disable()
     arm.close()
