@@ -15,6 +15,8 @@ d_1 = 0
 d_2 = 0
 alpha_1 = 0
 alpha_2 = 0
+constant_err = 0.170
+gripper_err = 0.075
 
 # FIXME: adjust the left parameter
 
@@ -68,7 +70,9 @@ def ik(des_position_3_1, show_error):
 def ik_solver(des_position_3_1, show):
     print('>>> RUNNING INTO IK_SOLVER')
     print('[INFO] destination of the end:', des_position_3_1)
+    des_position_3_1 = [des_position_3_1[0] - gripper_err, des_position_3_1[1]]
     angles, joint_positions = ik(des_position_3_1, True)
+    angles = [angles[0] + constant_err, angles[1] - constant_err, angles[2]]
     if show:
         position_plot(joint_positions, des=des_position_3_1)
     return [angles, joint_positions]
@@ -98,7 +102,7 @@ def star_to_des_solver(star_position_3_1, des_position_3_1, show):
     solved_angles.append(place_solved_angles)
     # solved_angles = {'pick_solved_angles': pick_solved_angles, 'base_solved_angle': base_solved_angle,
     #                  'move_2_solved_angles': move_2_solved_angles, 'place_solved_angles': place_solved_angles}
-    print('------------------->>> solved angles to archive the motion:\n', solved_angles)
+    # print('------------------->>> solved angles to archive the motion:\n', solved_angles)
     return solved_angles
 
 
