@@ -118,11 +118,12 @@ class Drivers:
 
     """vals[0,1]       0:dxl_id,   1:goal_position  """
     def syncwrite_more_goal_position(self, ids, vals):
-        param_goal_position = [[DXL_LOBYTE(vals[i]), DXL_HIBYTE(vals[i])] for i in ids]
+        list = [0, 1, 2, 3, 4, 5]
+        param_goal_position = [[DXL_LOBYTE(vals[i]), DXL_HIBYTE(vals[i])] for i in list]
 
         # Add Dynamixel#1-3 goal position value to the Syncwrite parameter storage
-        for i in ids:
-            self.moter_addparam(ids[i], vals[i])
+        for i in list:
+            self.moter_addparam(ids[i], param_goal_position[i])
 
         # Syncwrite goal position
         dxl_comm_result = self.groupSyncWrite.txPacket()
@@ -134,14 +135,13 @@ class Drivers:
 
         while 1:
             # Read Dynamixel#1 present position
-            dxl_present_position = [self.read_present_position([i]) for i in ids]
+            dxl_present_position = [self.read_present_position(ids[i]) for i in list]
 
-            for i in ids:
+            for i in list:
                 print("[ID:%03d] GoalPos:%03d PresPos:%03d" % (ids[i], vals[i], dxl_present_position[i]))
 
-            if not any([(abs(vals[i] - dxl_present_position[i]) > DXL_MOVING_STATUS_THRESHOLD) for i in ids]):
+            if not any([(abs(vals[i] - dxl_present_position[i]) > DXL_MOVING_STATUS_THRESHOLD) for i in list]):
                 break
-
 
     """vals[0,1]       0:dxl_id,   1:goal_position  """
     def syncwrite_goal_position(self, vals1, vals2):
