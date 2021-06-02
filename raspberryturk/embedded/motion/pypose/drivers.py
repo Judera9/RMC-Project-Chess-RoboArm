@@ -84,11 +84,11 @@ class Drivers:
 
     def set_goal_position(self, dxl_id, goal_position):
         self.setReg(dxl_id, ADDR_MX_GOAL_POSITION, goal_position)
-        while 1:
+        '''while 1:
             dxl_present_position = self.read_present_position(dxl_id)
             print("[ID:%03d] GoalPos:%03d  PresPos:%03d" % (dxl_id, goal_position, dxl_present_position))
             if not abs(goal_position - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD:
-                break
+                break'''
 
     def set_goal_speed(self, dxl_id, speed):
         self.setReg(dxl_id, P_GOAL_SPEED_L, speed)
@@ -117,33 +117,33 @@ class Drivers:
     """vals[0,1]       0:dxl_id,   1:goal_position  """
 
     def syncwrite_more_goal_position(self, ids, vals):
-        list = [0, 1, 2, 3, 4, 5]
-        param_goal_position = [[DXL_LOBYTE(vals[i]), DXL_HIBYTE(vals[i])] for i in list]
+        id_array = list(range(len(ids)))
+        param_goal_position = [[DXL_LOBYTE(vals[i]), DXL_HIBYTE(vals[i])] for i in id_array]
 
         # Add Dynamixel#1-3 goal position value to the Syncwrite parameter storage
-        for i in list:
+        for i in id_array:
             self.moter_addparam(ids[i], param_goal_position[i])
-
+        # time.sleep(2)
         # Syncwrite goal position
         dxl_comm_result = self.groupSyncWrite.txPacket()
+
         if dxl_comm_result != COMM_SUCCESS:
             print("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
 
         # Clear syncwrite parameter storage
         self.groupSyncWrite.clearParam()
 
-        while 1:
+        '''while 1:
             # Read Dynamixel#1 present position
-            dxl_present_position = [self.read_present_position(ids[i]) for i in list]
+            dxl_present_position = [self.read_present_position(ids[i]) for i in id_array]
 
-            for i in list:
+            for i in id_array:
                 print("[ID:%03d] GoalPos:%03d PresPos:%03d" % (ids[i], vals[i], dxl_present_position[i]))
 
-            if not any([(abs(vals[i] - dxl_present_position[i]) > DXL_MOVING_STATUS_THRESHOLD) for i in list]):
-                break
+            if not any([(abs(vals[i] - dxl_present_position[i]) > DXL_MOVING_STATUS_THRESHOLD) for i in id_array]):
+                break'''
 
     """vals[0,1]       0:dxl_id,   1:goal_position  """
-
     def syncwrite_goal_position(self, vals1, vals2):
         param_goal_position1 = [DXL_LOBYTE(vals1[1]), DXL_HIBYTE(vals1[1])]
         param_goal_position2 = [DXL_LOBYTE(vals2[1]), DXL_HIBYTE(vals2[1])]
