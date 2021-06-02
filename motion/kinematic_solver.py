@@ -172,7 +172,7 @@ def position_plot(joint_positions, des=None, is_from_to=False):
 # ik_plot_from_to([0.3, 0.2], [0.2, 0.2])
 # ik_plot_from_to([0.2, 0.2], [0.2, 0.03])
 
-star_to_des_solver([0.2, 0.1, 0.075], [0.3, 0.1, 0.075], True)
+# star_to_des_solver([0.2, 0.1, 0.075], [0.3, 0.1, 0.075], True)
 # {'pick_solved_angles': [1.053612606132627, -0.8869417850622838, 1.7374208210703432],
 #  'base_solved_angle': 0.982793723247329,
 #  'move_2_solved_angles': [1.5256459016886366, -1.5159843696859385, 1.5804115320026981],

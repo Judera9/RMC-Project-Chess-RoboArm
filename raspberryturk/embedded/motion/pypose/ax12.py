@@ -106,8 +106,9 @@ PROTOCOL_VERSION = 1.0
 
 TORQUE_ENABLE = 1                 # Value for enabling the torque
 TORQUE_DISABLE = 0                 # Value for disabling the torque
-DXL_MOVING_STATUS_THRESHOLD = 20           # Dynamixel moving status threshold
+DXL_MOVING_STATUS_THRESHOLD = 5           # Dynamixel moving status threshold
 WHEEL_MODE = 0
 JOINT_MODE = 1023
 
-LOW_SPEED = 50
+LOW_SPEED = 30
+SERVOS_6_SPEED = 60
