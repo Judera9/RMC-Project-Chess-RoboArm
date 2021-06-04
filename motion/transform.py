@@ -23,9 +23,10 @@ def transform_from_piece_inboard(piece_location, piece_type):
     inboard_y = length_of_square / 2 + length_of_square * piece_location[1]
     inboard_z = 0
     for chess in chess_height_types:
-        if piece_type is chess:
+        if piece_type == chess:
             print('find piece type in dict')
             inboard_z = chess_height_types.get(chess)
+            break
 
     arm_y = inboard_y - 4 * length_of_square
     arm_x = inboard_x + distance_to_board

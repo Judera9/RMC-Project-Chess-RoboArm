@@ -13,7 +13,7 @@ from pypose.ax12 import *
 from pypose.drivers import Drivers
 import motion.kinematic_solver as ks
 import motion.transform as trans
-from gripper import *
+# from gripper import *
 
 SERVO_1 = 16
 SERVO_2 = 10  # left
@@ -71,7 +71,7 @@ def teeth2rad(teeth, joint_num):
 class Arm(object):
     def __init__(self, port="/dev/ttyUSB0"):
         self.driver = Drivers(port=port)
-        self.gripper = Gripper()
+        # self.gripper = Gripper()
         # self.movement_engine = ArmMovementEngine()
 
     def close(self):
@@ -299,10 +299,10 @@ def test2():
 
 def move_from_to(from_position, to_position):
     # arm = Arm(port='COM3')
-    arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
+    # arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
 
-    arm.driver_enable()
-    arm.set_driver_low_speed()
+    # arm.driver_enable()
+    # arm.set_driver_low_speed()
 
     # FIXME: reset
 
@@ -317,22 +317,24 @@ def move_from_to(from_position, to_position):
         joint4_angle = rad2teeth(solved_angle[3], 4)
         if need_use_gripper == 1:
             print('pick up')
-            arm.gripper.pickup()
+            # arm.gripper.pickup()
         elif need_use_gripper == 4:
             print('drop off')
-            arm.gripper.dropoff()
-        arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+            # arm.gripper.dropoff()
+        # arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
         need_use_gripper += 1
         time.sleep(3)
 
     # FIXME: reset
-    arm.driver_disable()
-    arm.close()
+    # arm.driver_disable()
+    # arm.close()
 
 
 def main():
-    from_position = trans.transform_from_piece_inboard([0, 4], 'chess_KING')
-    to_position = trans.transform_from_piece_inboard([0, 5], 'chess_KING')
+    # from_position = trans.transform_from_piece_inboard([0, 4], 'chess_KING')
+    # to_position = trans.transform_from_piece_inboard([0, 5], 'chess_KING')
+    from_position = [0.1, 0.1, -0.02]
+    to_position = [0.1, -0.1, -0.02]
 
     print('from:')
     print(from_position)

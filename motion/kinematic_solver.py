@@ -81,7 +81,7 @@ def ik_solver(des_position_3_1, show):  # FIXME: adjust gripper error, constant 
     if show:
         print('[INFO] destination of the end:', des_position_3_1)
     des_position_3_1 = [des_position_3_1[0] - gripper_err,
-                        des_position_3_1[1] + eliminate_weight_err(des_position_3_1[0])]
+                        des_position_3_1[1] + eliminate_weight_err(des_position_3_1[0]) + gripper_height]
     angles, joint_positions = ik(des_position_3_1, show)
     angles = [angles[0] + constant_err, angles[1] - constant_err, angles[2]]  # FIXME: checkout + and -
     if show:
@@ -180,12 +180,13 @@ def position_plot(joint_positions, des=None, is_from_to=False):
 
 def eliminate_weight_err(from_origin):
     from_origin = from_origin * 100
-    if from_origin <=10:
+    if from_origin <= 10:
         return 0
     else:
         err1 = -0.0005 * from_origin ** 3 + 0.0893 * from_origin ** 2 - 1.2904 * from_origin + 3.5408
         err = err1 / 1000
         return err
+
 
 # solver could be used in project
 # fk_solver(20, 30, True)
@@ -196,7 +197,7 @@ def eliminate_weight_err(from_origin):
 # ik_plot_from_to([0.3, 0.2], [0.2, 0.2])
 # ik_plot_from_to([0.2, 0.2], [0.2, 0.03])
 
-# star_to_des_solver([0.2, 0.1, 0.075], [0.3, 0.1, 0.075], True)
+star_to_des_solver([0.1, 0.1, -0.02], [0.1, -0.1, -0.02], True)
 # {'pick_solved_angles': [1.053612606132627, -0.8869417850622838, 1.7374208210703432],
 #  'base_solved_angle': 0.982793723247329,
 #  'move_2_solved_angles': [1.5256459016886366, -1.5159843696859385, 1.5804115320026981],
