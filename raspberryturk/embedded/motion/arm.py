@@ -118,12 +118,10 @@ class Arm(object):
         present_position_angle = rad2teeth(joint_angle2 + joint_angle3 + 3.1415 / 2, 4)
         return present_position_angle
 
-
     def gripper_thread(self):
         while self._is_moving_new():
             position = self.get_SERVO6_position()
             self.driver.set_goal_position(SERVO_6, position)
-
 
     # position: the goal position for 3 groups of ax12a, the fourth ax12a is RTST(real time self-adjusting)
     def move_new_rtst(self, position):
@@ -211,7 +209,7 @@ class Arm(object):
 
 def test1():
     arm = Arm(port='COM3')
-    #arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
+    # arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
     arm.driver_enable()
     arm.set_driver_low_speed()
     # # angles, _ = ks.ik_solver([math.sqrt(0.2 ** 2 + 0.1 ** 2), 0.075], True)
@@ -222,7 +220,6 @@ def test1():
     # joint3_angle = arm.rad2teeth(angles[1], 3)
     # joint4_angle = arm.rad2teeth(angles[2], 4)
     # arm.sycn_return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-
 
     """
     Here is the test for ik_solver
@@ -289,6 +286,78 @@ def test2():
     arm.driver_enable()
     arm.move_new_rtst([512, 512, 512])
     time.sleep(1)
+    arm.driver_disable()
+    arm.close()
+
+
+def test3():
+    arm = Arm(port='COM3')
+
+    current_angles = arm.current_position()
+
+    from_position = [0, ks.l_2, ks.l_1]
+    to_position = [0, -ks.l_2, ks.l_1]
+
+    # arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
+    arm.driver_enable()
+    arm.set_driver_low_speed()
+    # # angles, _ = ks.ik_solver([math.sqrt(0.2 ** 2 + 0.1 ** 2), 0.075], True)
+    # angles, _ = ks.ik_solver([ks.l_2 + ks.gripper_err, ks.l_1], True)
+    # print('[INFO] angles sloved by ik:', angles)
+    # joint1_angle = arm.rad2teeth(0, 2)
+    # joint2_angle = arm.rad2teeth(angles[0], 2)
+    # joint3_angle = arm.rad2teeth(angles[1], 3)
+    # joint4_angle = arm.rad2teeth(angles[2], 4)
+    # arm.sycn_return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    """
+    Here is the test for ik_solver
+    """
+
+    angles, _ = ks.ik_solver([math.sqrt(0.2 ** 2 + 0.1 ** 2), 0.05], False)
+    print('[INFO] angles sloved by ik:', angles)
+    joint1_angle = rad2teeth(0, 2)
+    joint2_angle = rad2teeth(angles[0], 2)
+    joint3_angle = rad2teeth(angles[1], 3)
+    joint4_angle = rad2teeth(angles[2], 4)
+    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(3)
+
+    """
+    Here is the test for start_to_end
+    """
+
+    solved_angles = ks.star_to_des_solver(from_position, to_position, False)
+    print('[INFO] solved_angles:', solved_angles[0], '\n', solved_angles[1], '\n', solved_angles[2])
+    pick_solved_angles = solved_angles[0]
+    base_solved_angle = solved_angles[1]
+    move_2_solved_angles = solved_angles[2]
+    place_solved_angles = solved_angles[3]
+
+    # joint1_angle = arm.rad2teeth(0, 2)
+    joint2_angle = rad2teeth(pick_solved_angles[0], 2)
+    joint3_angle = rad2teeth(pick_solved_angles[1], 3)
+    joint4_angle = rad2teeth(pick_solved_angles[2], 4)
+    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(3)
+
+    joint1_angle = rad2teeth(base_solved_angle, 2)
+    joint2_angle = rad2teeth(move_2_solved_angles[0], 2)
+    joint3_angle = rad2teeth(move_2_solved_angles[1], 3)
+    joint4_angle = rad2teeth(move_2_solved_angles[2], 4)
+    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(3)
+
+    joint1_angle = rad2teeth(base_solved_angle, 2)
+    joint2_angle = rad2teeth(place_solved_angles[0], 2)
+    joint3_angle = rad2teeth(place_solved_angles[1], 3)
+    joint4_angle = rad2teeth(place_solved_angles[2], 4)
+    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(10)
     arm.driver_disable()
     arm.close()
 
