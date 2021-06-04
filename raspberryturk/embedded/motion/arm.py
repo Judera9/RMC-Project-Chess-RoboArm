@@ -1,6 +1,5 @@
 # import time
 # import serial
-import _thread
 import time
 
 import math
@@ -52,8 +51,10 @@ def _adjusted_speed(start_position, goal_position, position):
 
 
 def rad2teeth(rad, joint_num):
-    if joint_num == 1 or joint_num == 2 or joint_num == 4:
+    if joint_num == 2 or joint_num == 4:
         return int((240 - (rad * 180 // math.pi)) / 0.292969)
+    elif joint_num == 1:
+        return int((150 +(rad * 180 // math.pi)) / 0.292969)
     elif joint_num == 3:
         return int((- (rad * 180 // math.pi) + 60) / 0.292969)
 
@@ -210,95 +211,26 @@ class Arm(object):
         return [_register_bytes_to_value(self.driver.getReg(index, register, 2)) for index in SERVOS]
 
 
-def test1():
-    arm = Arm(port='COM3')
-    # arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
+def test2():
+    arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
     arm.driver_enable()
-    arm.set_driver_low_speed()
-    # # angles, _ = ks.ik_solver([math.sqrt(0.2 ** 2 + 0.1 ** 2), 0.075], True)
-    # angles, _ = ks.ik_solver([ks.l_2 + ks.gripper_err, ks.l_1], True)
-    # print('[INFO] angles sloved by ik:', angles)
-    # joint1_angle = arm.rad2teeth(0, 2)
-    # joint2_angle = arm.rad2teeth(angles[0], 2)
-    # joint3_angle = arm.rad2teeth(angles[1], 3)
-    # joint4_angle = arm.rad2teeth(angles[2], 4)
-    # arm.sycn_return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
 
-    """
-    Here is the test for ik_solver
-    """
-
-    angles, _ = ks.ik_solver([math.sqrt(0.2 ** 2 + 0.1 ** 2), 0.05], False)
-    print('[INFO] angles sloved by ik:', angles)
-    joint1_angle = rad2teeth(0, 2)
+    angles = ks.ik_solver([0.2, 0.07], False)[0]
+    # arm.move_new_rtst([512, 512, 512, 512])
     joint2_angle = rad2teeth(angles[0], 2)
     joint3_angle = rad2teeth(angles[1], 3)
-    joint4_angle = rad2teeth(angles[2], 4)
-    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-
-    time.sleep(3)
-
-    """
-    Here is the test for start_to_end
-    """
-
-    solved_angles = ks.star_to_des_solver([0.2, 0.1, 0.075], [0.3, -0.1, 0.075], False)
-    print('[INFO] solved_angles:', solved_angles)
-    pick_solved_angles = solved_angles[0]
-    base_solved_angle = solved_angles[1]
-    move_2_solved_angles = solved_angles[2]
-    place_solved_angles = solved_angles[3]
-
-    # joint1_angle = arm.rad2teeth(0, 2)
-    joint2_angle = rad2teeth(pick_solved_angles[0], 2)
-    joint3_angle = rad2teeth(pick_solved_angles[1], 3)
-    joint4_angle = rad2teeth(pick_solved_angles[2], 4)
-    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-
-    time.sleep(3)
-
-    joint1_angle = rad2teeth(base_solved_angle, 2)
-    # joint2_angle = arm.rad2teeth(pick_solved_angles[0], 2)
-    # joint3_angle = arm.rad2teeth(pick_solved_angles[1], 3)
-    # joint4_angle = arm.rad2teeth(pick_solved_angles[2], 4)
-    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-
-    time.sleep(3)
-
-    # joint1_angle = arm.rad2teeth(base_solved_angle, 2)
-    joint2_angle = rad2teeth(move_2_solved_angles[0], 2)
-    joint3_angle = rad2teeth(move_2_solved_angles[1], 3)
-    joint4_angle = rad2teeth(move_2_solved_angles[2], 4)
-    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-
-    time.sleep(3)
-
-    joint1_angle = rad2teeth(base_solved_angle, 2)
-    joint2_angle = rad2teeth(place_solved_angles[0], 2)
-    joint3_angle = rad2teeth(place_solved_angles[1], 3)
-    joint4_angle = rad2teeth(place_solved_angles[2], 4)
-    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-
-    time.sleep(10)
-    arm.driver_disable()
-    arm.close()
-
-
-def test2():
-    arm = Arm(port='COM3')
-    arm.driver_enable()
-    arm.move_new_rtst([512, 512, 512])
-    time.sleep(1)
-    arm.driver_disable()
-    arm.close()
+    arm.move_new_rtst([512, joint2_angle, joint3_angle, 512])
+    # time.sleep(15)
+    # arm.driver_disable()
+    # arm.close()
 
 
 def move_from_to(from_position, to_position):
     # arm = Arm(port='COM3')
-    # arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
+    arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
 
-    # arm.driver_enable()
-    # arm.set_driver_low_speed()
+    arm.driver_enable()
+    arm.set_driver_low_speed()
 
     # FIXME: reset
 
@@ -310,17 +242,20 @@ def move_from_to(from_position, to_position):
         joint2_angle = rad2teeth(solved_angle[1], 2)
         joint3_angle = rad2teeth(solved_angle[2], 3)
         joint4_angle = rad2teeth(solved_angle[3], 4)
-        # arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-        time.sleep(3)
+        print('teeth: [', joint1_angle, joint2_angle, joint3_angle, joint4_angle, ']')
+        arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+        time.sleep(20)
     # FIXME: reset
-    # arm.driver_disable()
-    # arm.close()
+    arm.driver_disable()
+    arm.close()
 
 
 def main():
-    from_position = [0, ks.l_2, ks.l_1]
-    to_position = [0, -ks.l_2, ks.l_1]
-    move_from_to(from_position, to_position)
+    test2()
+    # from_position = [0.02, 0, 0.07]
+    # to_position = [0.04, 0, 0.07]
+
+    # move_from_to(from_position, to_position)
 
 
 if __name__ == '__main__':

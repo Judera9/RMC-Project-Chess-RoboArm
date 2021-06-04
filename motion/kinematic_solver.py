@@ -20,7 +20,7 @@ alpha_2 = 0
 constant_err = 0.175  # FIXME: adjust constant error
 gripper_err = 0.038
 raise_height = 0.1
-gripper_height = 0.075
+gripper_height = 0.07
 
 
 # FIXME: adjust the left parameter
@@ -80,7 +80,8 @@ def ik_solver(des_position_3_1, show):  # FIXME: adjust gripper error, constant 
     print('RUNNING INTO IK_SOLVER')
     if show:
         print('[INFO] destination of the end:', des_position_3_1)
-    des_position_3_1 = [des_position_3_1[0] - gripper_err, des_position_3_1[1]]
+    des_position_3_1 = [des_position_3_1[0] - gripper_err,
+                        des_position_3_1[1] + eliminate_weight_err(des_position_3_1[0])]
     angles, joint_positions = ik(des_position_3_1, show)
     angles = [angles[0] + constant_err, angles[1] - constant_err, angles[2]]  # FIXME: checkout + and -
     if show:
@@ -90,7 +91,7 @@ def ik_solver(des_position_3_1, show):  # FIXME: adjust gripper error, constant 
 
 def base_solver(des_position_1_0, show):
     print('RUNNING INTO BASE_SOLVER')
-    des_angle = arctan2(des_position_1_0[0], des_position_1_0[1])
+    des_angle = arctan2(des_position_1_0[1], des_position_1_0[0])
     if show:
         print('[INFO] base angle after rotation is:', des_angle)
     return des_angle
@@ -176,6 +177,15 @@ def position_plot(joint_positions, des=None, is_from_to=False):
     # fig.savefig('./pic/temp.pdf')
     plt.show()
 
+
+def eliminate_weight_err(from_origin):
+    from_origin = from_origin * 100
+    if from_origin <=10:
+        return 0
+    else:
+        err1 = -0.0005 * from_origin ** 3 + 0.0893 * from_origin ** 2 - 1.2904 * from_origin + 3.5408
+        err = err1 / 1000
+        return err
 
 # solver could be used in project
 # fk_solver(20, 30, True)
