@@ -13,6 +13,7 @@ from scipy.interpolate import interp1d
 from pypose.ax12 import *
 from pypose.drivers import Drivers
 import motion.kinematic_solver as ks
+import motion.transform as trans
 
 SERVO_1 = 16
 SERVO_2 = 10  # left
@@ -312,15 +313,24 @@ def move_from_to(from_position, to_position):
         joint4_angle = rad2teeth(solved_angle[3], 4)
         # arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
         time.sleep(3)
+
     # FIXME: reset
     # arm.driver_disable()
     # arm.close()
 
 
 def main():
-    from_position = [0, ks.l_2, ks.l_1]
-    to_position = [0, -ks.l_2, ks.l_1]
-    move_from_to(from_position, to_position)
+    from_position = trans.transform_from_piece_inboard([0, 4], 'chess_KING')
+    to_position = trans.transform_from_piece_inboard([0, 5], 'chess_KING')
+
+    print('from:')
+    print(from_position)
+    print('to:')
+    print(to_position)
+
+    # from_position = [0, ks.l_2, ks.l_1]
+    # to_position = [0, -ks.l_2, ks.l_1]
+    move_from_to(from_position, to_position)  # FIXME: check that whether the minus value is supported
 
 
 if __name__ == '__main__':
