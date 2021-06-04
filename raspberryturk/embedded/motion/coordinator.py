@@ -51,9 +51,9 @@ class Coordinator(object):
         # writing adjustment message
         t0 = time.time()
         self.arm.move_to_point_new(origin, piece_type)  # move to pickup point
-        self.gripper.pickup_new()
+        self.gripper.pickup()
         self.arm.move_to_point_new(destination, piece_type)  # move to destination
-        self.gripper.dropoff_new()
+        self.gripper.dropoff()
         self.arm.return_to_rest_new()     # QAQ 已改成角度rest
         elapsed_time = time.time() - t0  # time count
         self._logger.info("Done moving piece (elapsed time: {}s).".format(elapsed_time))

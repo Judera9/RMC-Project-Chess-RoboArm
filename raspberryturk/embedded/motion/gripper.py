@@ -22,8 +22,31 @@ class Gripper(object):
     def __init__(self):
         self.previous_z = None
         GPIO.setmode(GPIO.BOARD)  #设置引脚编号规则
-        GPIO.setup(servo_pin, GPIO.OUT)  #设置为输出
+        GPIO.setwarnings(False)
+        # GPIO.setup(servo_pin, GPIO.OUT)  #设置为输出
         GPIO.setup(electromagnet_pin, GPIO.OUT)
+
+    def electromagnet(self, on):  # Electromagnet state switching
+        output = GPIO.HIGH if on else GPIO.LOW
+        GPIO.output(electromagnet_pin, output)
+
+    """def electromagnet(on):  # Electromagnet state switching
+        if (on):
+            output = GPIO.HIGH
+            GPIO.output(40, output)
+            print(GPIO.input(40))
+        else:
+            output = GPIO.LOW
+            GPIO.output(40, output)
+            print(GPIO.input(40))"""
+
+    def pickup(self):
+        self.electromagnet(True)
+        sleep(0.2)
+
+    def dropoff(self):
+        self.electromagnet(False)
+        sleep(0.2)
 
     def calibrate(self):    # reset to the rest height
         self.move(RESTING_HEIGHT)
@@ -42,17 +65,11 @@ class Gripper(object):
         del p
         self.previous_z = z
 
-    def electromagnet(self, on):    # Electromagnet state switching
+    """def electromagnet(self, on):    # Electromagnet state switching
         output = GPIO.HIGH if on else GPIO.LOW
         GPIO.output(electromagnet_pin, output)
 
-    def pickup_new(self):
-        self.electromagnet(True)
-        sleep(0.2)
 
-    def dropoff_new(self):
-        self.electromagnet(False)
-        sleep(0.4)
 
     def pickup(self, piece_type):
         piece_height = PIECE_HEIGHTS[piece_type]
@@ -68,7 +85,7 @@ class Gripper(object):
         sleep(0.2)
         self.electromagnet(False)
         sleep(0.4)
-        self.move(RESTING_HEIGHT)
+        self.move(RESTING_HEIGHT)"""
 
     def cleanup(self):
         GPIO.cleanup()
