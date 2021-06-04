@@ -13,6 +13,7 @@ from pypose.ax12 import *
 from pypose.drivers import Drivers
 import motion.kinematic_solver as ks
 import motion.transform as trans
+from gripper import *
 
 SERVO_1 = 16
 SERVO_2 = 10  # left
@@ -70,6 +71,7 @@ def teeth2rad(teeth, joint_num):
 class Arm(object):
     def __init__(self, port="/dev/ttyUSB0"):
         self.driver = Drivers(port=port)
+        self.gripper = Gripper()
         # self.movement_engine = ArmMovementEngine()
 
     def close(self):
@@ -212,18 +214,87 @@ class Arm(object):
         return [_register_bytes_to_value(self.driver.getReg(index, register, 2)) for index in SERVOS]
 
 
-def test2():
-    arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
+def test1():
+    arm = Arm(port='COM3')
+    # arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
     arm.driver_enable()
+    arm.set_driver_low_speed()
+    # # angles, _ = ks.ik_solver([math.sqrt(0.2 ** 2 + 0.1 ** 2), 0.075], True)
+    # angles, _ = ks.ik_solver([ks.l_2 + ks.gripper_err, ks.l_1], True)
+    # print('[INFO] angles sloved by ik:', angles)
+    # joint1_angle = arm.rad2teeth(0, 2)
+    # joint2_angle = arm.rad2teeth(angles[0], 2)
+    # joint3_angle = arm.rad2teeth(angles[1], 3)
+    # joint4_angle = arm.rad2teeth(angles[2], 4)
+    # arm.sycn_return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
 
-    angles = ks.ik_solver([0.2, 0.07], False)[0]
-    # arm.move_new_rtst([512, 512, 512, 512])
+    """
+    Here is the test for ik_solver
+    """
+
+    angles, _ = ks.ik_solver([math.sqrt(0.2 ** 2 + 0.1 ** 2), 0.05], False)
+    print('[INFO] angles sloved by ik:', angles)
+    joint1_angle = rad2teeth(0, 2)
     joint2_angle = rad2teeth(angles[0], 2)
     joint3_angle = rad2teeth(angles[1], 3)
-    arm.move_new_rtst([512, joint2_angle, joint3_angle, 512])
-    # time.sleep(15)
-    # arm.driver_disable()
-    # arm.close()
+    joint4_angle = rad2teeth(angles[2], 4)
+    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(3)
+
+    """
+    Here is the test for start_to_end
+    """
+
+    solved_angles = ks.star_to_des_solver([0.2, 0.1, 0.075], [0.3, -0.1, 0.075], False)
+    print('[INFO] solved_angles:', solved_angles)
+    pick_solved_angles = solved_angles[0]
+    base_solved_angle = solved_angles[1]
+    move_2_solved_angles = solved_angles[2]
+    place_solved_angles = solved_angles[3]
+
+    # joint1_angle = arm.rad2teeth(0, 2)
+    joint2_angle = rad2teeth(pick_solved_angles[0], 2)
+    joint3_angle = rad2teeth(pick_solved_angles[1], 3)
+    joint4_angle = rad2teeth(pick_solved_angles[2], 4)
+    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(3)
+
+    joint1_angle = rad2teeth(base_solved_angle, 2)
+    # joint2_angle = arm.rad2teeth(pick_solved_angles[0], 2)
+    # joint3_angle = arm.rad2teeth(pick_solved_angles[1], 3)
+    # joint4_angle = arm.rad2teeth(pick_solved_angles[2], 4)
+    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(3)
+
+    # joint1_angle = arm.rad2teeth(base_solved_angle, 2)
+    joint2_angle = rad2teeth(move_2_solved_angles[0], 2)
+    joint3_angle = rad2teeth(move_2_solved_angles[1], 3)
+    joint4_angle = rad2teeth(move_2_solved_angles[2], 4)
+    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(3)
+
+    joint1_angle = rad2teeth(base_solved_angle, 2)
+    joint2_angle = rad2teeth(place_solved_angles[0], 2)
+    joint3_angle = rad2teeth(place_solved_angles[1], 3)
+    joint4_angle = rad2teeth(place_solved_angles[2], 4)
+    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+
+    time.sleep(10)
+    arm.driver_disable()
+    arm.close()
+
+
+def test2():
+    arm = Arm(port='COM3')
+    arm.driver_enable()
+    arm.move_new_rtst([512, 512, 512])
+    time.sleep(1)
+    arm.driver_disable()
+    arm.close()
 
 
 def move_from_to(from_position, to_position):
@@ -237,16 +308,21 @@ def move_from_to(from_position, to_position):
 
     solved_angles = ks.star_to_des_solver(from_position, to_position, False)
     print('solved angles:')
+    need_use_gripper = 0  # trun to
     for solved_angle in solved_angles:
         print(solved_angle)
         joint1_angle = rad2teeth(solved_angle[0], 1)
         joint2_angle = rad2teeth(solved_angle[1], 2)
         joint3_angle = rad2teeth(solved_angle[2], 3)
         joint4_angle = rad2teeth(solved_angle[3], 4)
-        # print('teeth: [', joint1_angle, joint2_angle, joint3_angle, joint4_angle, ']')
+        if need_use_gripper == 1:
+            print('pick up')
+            arm.gripper.pickup()
+        elif need_use_gripper == 4:
+            print('drop off')
+            arm.gripper.dropoff()
         arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-        time.sleep(20)
-        # arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+        need_use_gripper += 1
         time.sleep(3)
 
     # FIXME: reset
