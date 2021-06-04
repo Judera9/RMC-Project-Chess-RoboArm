@@ -14,6 +14,7 @@ from pypose.ax12 import *
 from pypose.drivers import Drivers
 import motion.kinematic_solver as ks
 import motion.transform as trans
+from gripper import *
 
 SERVO_1 = 16
 SERVO_2 = 10  # left
@@ -69,6 +70,7 @@ def teeth2rad(teeth, joint_num):
 class Arm(object):
     def __init__(self, port="/dev/ttyUSB0"):
         self.driver = Drivers(port=port)
+        self.gripper = Gripper()
         # self.movement_engine = ArmMovementEngine()
 
     def close(self):
@@ -296,27 +298,35 @@ def test2():
 
 def move_from_to(from_position, to_position):
     # arm = Arm(port='COM3')
-    # arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
+    arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
 
-    # arm.driver_enable()
-    # arm.set_driver_low_speed()
+    arm.driver_enable()
+    arm.set_driver_low_speed()
 
     # FIXME: reset
 
     solved_angles = ks.star_to_des_solver(from_position, to_position, False)
     print('solved angles:')
+    need_use_gripper = 0  # trun to
     for solved_angle in solved_angles:
         print(solved_angle)
         joint1_angle = rad2teeth(solved_angle[0], 1)
         joint2_angle = rad2teeth(solved_angle[1], 2)
         joint3_angle = rad2teeth(solved_angle[2], 3)
         joint4_angle = rad2teeth(solved_angle[3], 4)
-        # arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+        if need_use_gripper == 1:
+            print('pick up')
+            arm.gripper.pickup()
+        elif need_use_gripper == 4:
+            print('drop off')
+            arm.gripper.dropoff()
+        arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+        need_use_gripper += 1
         time.sleep(3)
 
     # FIXME: reset
-    # arm.driver_disable()
-    # arm.close()
+    arm.driver_disable()
+    arm.close()
 
 
 def main():
