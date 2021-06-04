@@ -33,26 +33,26 @@ def dh_matrix(delta, d, a, alpha):  # transform matrix of DH
                      [0, 0, 0, 1]])
 
 
-# def fk(theta_1, theta_2):
-#     position_0 = np.array([0, 0, 0, 1]).T  # transpose, column vector
-#     position_1 = np.array([0, 0, 0, 1]).T
-#     position_2 = np.array([0, 0, 0, 1]).T
-#     position1_0 = dh_matrix(theta_1, d_1, l_1, alpha_1).dot(position_1)  # results of end of link1 position
-#     position2_0 = dh_matrix(theta_1, d_1, l_1, alpha_1).dot(dh_matrix(theta_2, d_2, l_2, alpha_2)).dot(
-#         position_2)  # link2
-#     return [position_0, position1_0, position2_0]  # positions of links' end
+def fk(theta_1, theta_2):
+    position_0 = np.array([0, 0, 0, 1]).T  # transpose, column vector
+    position_1 = np.array([0, 0, 0, 1]).T
+    position_2 = np.array([0, 0, 0, 1]).T
+    position1_0 = dh_matrix(theta_1, d_1, l_1, alpha_1).dot(position_1)  # results of end of link1 position
+    position2_0 = dh_matrix(theta_1, d_1, l_1, alpha_1).dot(dh_matrix(theta_2, d_2, l_2, alpha_2)).dot(
+        position_2)  # link2
+    return [position_0, position1_0, position2_0]  # positions of links' end
 
 
-# def fk_solver(theta_1, theta_2, show):  # theta_2 multiply a minus here because we use upper elbow
-#     print('RUNNING INTO FK_SOLVER')
-#     theta_1_rad = np.radians(theta_1)
-#     theta_2_rad = np.radians(-theta_2)
-#     if show:
-#         print('[INFO] Input [theta_1 theta_2] in degree:', [theta_1, -theta_2])
-#     joint_positions = fk(theta_1_rad, theta_2_rad)
-#     if show:
-#         position_plot(joint_positions)
-#     return joint_positions
+def fk_solver(theta_1, theta_2, show):  # theta_2 multiply a minus here because we use upper elbow
+    print('RUNNING INTO FK_SOLVER')
+    theta_1_rad = np.radians(theta_1)
+    theta_2_rad = np.radians(-theta_2)
+    if show:
+        print('[INFO] Input [theta_1 theta_2] in degree:', [theta_1, -theta_2])
+    joint_positions = fk(theta_1_rad, theta_2_rad)
+    if show:
+        position_plot(joint_positions)
+    return joint_positions
 
 
 def ik(des_position_3_1, show_error):
@@ -65,6 +65,7 @@ def ik(des_position_3_1, show_error):
     D = (des_position_3_1[0] ** 2 + des_position_3_1[1] ** 2 - l_1 ** 2 - l_2 ** 2) / (2 * l_1 * l_2)
     theta_2 = arctan2(-(1 - D ** 2) ** 0.5, D)  # note that here use a upper elbow state
     theta_1 = arctan2(des_position_3_1[1], des_position_3_1[0]) - arctan2(l_2 * sin(theta_2), l_1 + l_2 * cos(theta_2))
+    #  minus may be wrong
     theta_3 = theta_1 + theta_2 + 3.1415 / 2
 
     if show_error:
