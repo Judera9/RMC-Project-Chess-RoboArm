@@ -85,14 +85,18 @@ class Arm(object):
     # def return_to_rest(self):  # position where dead pieces rest ?
     #  self.move_to_point([20, 13.5])
 
-    def return_to_rest_new(self, joint_list):
+
+    def return_to_home(self):
+        self.move_new1([512, 300, 300, 800])
+
+    """def return_to_rest_new(self, joint_list):
         # default: [512, 512, 512, 512]
         joint1_teeth = joint_list[0]
         joint2_teeth = joint_list[1]
         joint3_teeth = joint_list[2]
         joint4_teeth = joint_list[3]
         print('[INFO] joint_list is:', joint_list)
-        self.move_new((joint1_teeth, joint2_teeth, joint3_teeth, joint4_teeth))
+        self.move_new((joint1_teeth, joint2_teeth, joint3_teeth, joint4_teeth))"""
 
     def sycn_return_to_rest_new(self, joint_list):
         joint1_teeth = joint_list[0]
