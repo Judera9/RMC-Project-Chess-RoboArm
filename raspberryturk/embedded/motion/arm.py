@@ -213,6 +213,38 @@ class Arm(object):
     def _values_for_register(self, register):
         return [_register_bytes_to_value(self.driver.getReg(index, register, 2)) for index in SERVOS]
 
+    def move_from_to(from_position, to_position):
+        # arm = Arm(port='COM3')
+        # arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
+
+        # arm.driver_enable()
+        # arm.set_driver_low_speed()
+
+        # FIXME: reset
+
+        solved_angles = ks.star_to_des_solver(from_position, to_position, False)
+        print('solved angles:')
+        need_use_gripper = 0  # trun to
+        for solved_angle in solved_angles:
+            print(solved_angle)
+            joint1_angle = rad2teeth(solved_angle[0], 1)
+            joint2_angle = rad2teeth(solved_angle[1], 2)
+            joint3_angle = rad2teeth(solved_angle[2], 3)
+            joint4_angle = rad2teeth(solved_angle[3], 4)
+            if need_use_gripper == 1:
+                print('pick up')
+                # arm.gripper.pickup()
+            elif need_use_gripper == 4:
+                print('drop off')
+                # arm.gripper.dropoff()
+            # arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+            need_use_gripper += 1
+            time.sleep(3)
+
+        # FIXME: reset
+        # arm.driver_disable()
+        # arm.close()
+
 
 def test1():
     arm = Arm(port='COM3')
@@ -297,37 +329,6 @@ def test2():
     arm.close()
 
 
-def move_from_to(from_position, to_position):
-    # arm = Arm(port='COM3')
-    # arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
-
-    # arm.driver_enable()
-    # arm.set_driver_low_speed()
-
-    # FIXME: reset
-
-    solved_angles = ks.star_to_des_solver(from_position, to_position, False)
-    print('solved angles:')
-    need_use_gripper = 0  # trun to
-    for solved_angle in solved_angles:
-        print(solved_angle)
-        joint1_angle = rad2teeth(solved_angle[0], 1)
-        joint2_angle = rad2teeth(solved_angle[1], 2)
-        joint3_angle = rad2teeth(solved_angle[2], 3)
-        joint4_angle = rad2teeth(solved_angle[3], 4)
-        if need_use_gripper == 1:
-            print('pick up')
-            # arm.gripper.pickup()
-        elif need_use_gripper == 4:
-            print('drop off')
-            # arm.gripper.dropoff()
-        # arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-        need_use_gripper += 1
-        time.sleep(3)
-
-    # FIXME: reset
-    # arm.driver_disable()
-    # arm.close()
 
 
 def main():
