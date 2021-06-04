@@ -191,8 +191,11 @@ class Arm(object):
         for i in SERVOS:
             self.driver.setReg(i, P_GOAL_SPEED_L, [speed[i % 2] % 256, speed[i % 2] >> 8])
 
-    def current_position(self):
-        return self._values_for_register_new(P_PRESENT_POSITION_L)
+    def current_position(self):  # get rad for 4 SERVOS
+        return [teeth2rad(self.driver.read_present_position(i)) for i in SERVOS]
+
+    """def current_position(self):
+        return self._values_for_register_new(P_PRESENT_POSITION_L)"""
 
     def _is_moving_new(self):
         return any([self.driver.read_1byte(index, P_MOVING) == 1 for index in SERVOS_NO_GRIPPER])
