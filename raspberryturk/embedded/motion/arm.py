@@ -290,80 +290,34 @@ def test2():
     arm.close()
 
 
-def test3():
-    arm = Arm(port='COM3')
-
-    current_angles = arm.current_position()
-
-    from_position = [0, ks.l_2, ks.l_1]
-    to_position = [0, -ks.l_2, ks.l_1]
-
+def move_from_to(from_position, to_position):
+    # arm = Arm(port='COM3')
     # arm = Arm(port='/dev/tty.usbserial-FT4THVJ7')
-    arm.driver_enable()
-    arm.set_driver_low_speed()
-    # # angles, _ = ks.ik_solver([math.sqrt(0.2 ** 2 + 0.1 ** 2), 0.075], True)
-    # angles, _ = ks.ik_solver([ks.l_2 + ks.gripper_err, ks.l_1], True)
-    # print('[INFO] angles sloved by ik:', angles)
-    # joint1_angle = arm.rad2teeth(0, 2)
-    # joint2_angle = arm.rad2teeth(angles[0], 2)
-    # joint3_angle = arm.rad2teeth(angles[1], 3)
-    # joint4_angle = arm.rad2teeth(angles[2], 4)
-    # arm.sycn_return_to_rest_new([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
 
-    """
-    Here is the test for ik_solver
-    """
+    # arm.driver_enable()
+    # arm.set_driver_low_speed()
 
-    angles, _ = ks.ik_solver([math.sqrt(0.2 ** 2 + 0.1 ** 2), 0.05], False)
-    print('[INFO] angles sloved by ik:', angles)
-    joint1_angle = rad2teeth(0, 2)
-    joint2_angle = rad2teeth(angles[0], 2)
-    joint3_angle = rad2teeth(angles[1], 3)
-    joint4_angle = rad2teeth(angles[2], 4)
-    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-
-    time.sleep(3)
-
-    """
-    Here is the test for start_to_end
-    """
+    # FIXME: reset
 
     solved_angles = ks.star_to_des_solver(from_position, to_position, False)
-    print('[INFO] solved_angles:', solved_angles[0], '\n', solved_angles[1], '\n', solved_angles[2])
-    pick_solved_angles = solved_angles[0]
-    base_solved_angle = solved_angles[1]
-    move_2_solved_angles = solved_angles[2]
-    place_solved_angles = solved_angles[3]
-
-    # joint1_angle = arm.rad2teeth(0, 2)
-    joint2_angle = rad2teeth(pick_solved_angles[0], 2)
-    joint3_angle = rad2teeth(pick_solved_angles[1], 3)
-    joint4_angle = rad2teeth(pick_solved_angles[2], 4)
-    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-
-    time.sleep(3)
-
-    joint1_angle = rad2teeth(base_solved_angle, 2)
-    joint2_angle = rad2teeth(move_2_solved_angles[0], 2)
-    joint3_angle = rad2teeth(move_2_solved_angles[1], 3)
-    joint4_angle = rad2teeth(move_2_solved_angles[2], 4)
-    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-
-    time.sleep(3)
-
-    joint1_angle = rad2teeth(base_solved_angle, 2)
-    joint2_angle = rad2teeth(place_solved_angles[0], 2)
-    joint3_angle = rad2teeth(place_solved_angles[1], 3)
-    joint4_angle = rad2teeth(place_solved_angles[2], 4)
-    arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
-
-    time.sleep(10)
-    arm.driver_disable()
-    arm.close()
+    print('solved angles:')
+    for solved_angle in solved_angles:
+        print(solved_angle)
+        joint1_angle = rad2teeth(solved_angle[0], 1)
+        joint2_angle = rad2teeth(solved_angle[1], 2)
+        joint3_angle = rad2teeth(solved_angle[2], 3)
+        joint4_angle = rad2teeth(solved_angle[3], 4)
+        # arm.move_new_rtst([joint1_angle, joint2_angle, joint3_angle, joint4_angle])
+        time.sleep(3)
+    # FIXME: reset
+    # arm.driver_disable()
+    # arm.close()
 
 
 def main():
-    test2()
+    from_position = [0, ks.l_2, ks.l_1]
+    to_position = [0, -ks.l_2, ks.l_1]
+    move_from_to(from_position, to_position)
 
 
 if __name__ == '__main__':

@@ -80,7 +80,7 @@ def ik_solver(des_position_3_1, show):  # FIXME: adjust gripper error, constant 
     if show:
         print('[INFO] destination of the end:', des_position_3_1)
     des_position_3_1 = [des_position_3_1[0] - gripper_err, des_position_3_1[1]]
-    angles, joint_positions = ik(des_position_3_1, True)
+    angles, joint_positions = ik(des_position_3_1, show)
     angles = [angles[0] + constant_err, angles[1] - constant_err, angles[2]]  # FIXME: checkout + and -
     if show:
         position_plot(joint_positions, des=des_position_3_1)
@@ -105,22 +105,35 @@ def star_to_des_solver(star_position_3_1, des_position_3_1, show):
 
     ik_x_length_start = math.sqrt(star_position_3_1[0] ** 2 + star_position_3_1[1] ** 2)
     ik_x_length_end = math.sqrt(des_position_3_1[0] ** 2 + des_position_3_1[1] ** 2)
+    origin_base_angle = math.atan2(star_position_3_1[1], star_position_3_1[0])
 
     pick_solved_angles = ik_solver([ik_x_length_start, star_position_3_1[2] + raise_height], show)[0]
+    pick_solved_angles.insert(0, origin_base_angle)
+    solved_angles.append(pick_solved_angles)
+
+    pick_2_solved_angles = ik_solver([ik_x_length_start, star_position_3_1[2]], show)[0]
+    pick_2_solved_angles.insert(0, origin_base_angle)
+    solved_angles.append(pick_2_solved_angles)
+
     solved_angles.append(pick_solved_angles)
 
     base_solved_angle = base_solver(des_position_3_1[0:2], show)
-    solved_angles.append(base_solved_angle)
+    # solved_angles.append(base_solved_angle)
 
     move_2_solved_angles = ik_solver([ik_x_length_end, des_position_3_1[2] + raise_height], show)[0]
+    move_2_solved_angles.insert(0, base_solved_angle)
     solved_angles.append(move_2_solved_angles)
 
     place_solved_angles = ik_solver([ik_x_length_end, des_position_3_1[2]], show)[0]
+    place_solved_angles.insert(0, base_solved_angle)
     solved_angles.append(place_solved_angles)
 
+    solved_angles.append(move_2_solved_angles)
+
     if show:
-        print('[INFO] solved angles to archive the motion:\n', solved_angles[0], '\n', solved_angles[1], '\n',
-              solved_angles[2])
+        print('[INFO] solved angles to archive the motion:')
+        for solved_angle in solved_angles:
+            print(solved_angle)
     return solved_angles
 
 
